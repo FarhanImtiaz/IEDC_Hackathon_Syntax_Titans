@@ -172,19 +172,19 @@ function displayTraumaResults(data) {
   if (data.severity_score >= 7) severityClass = 'severity-high';
   else if (data.severity_score >= 4) severityClass = 'severity-medium';
 
-  const emergencyAlert = data.call_emergency ? `
-    <div class="emergency-alert">
-      🚨 CALL EMERGENCY SERVICES IMMEDIATELY 🚨
-    </div>
-  ` : '';
+  console.log('Trauma Analysis Result:', data);
+  console.log('Severity Score:', data.severity_score);
 
-  // SOS Button appears when severity >= 8
-  const sosButton = data.severity_score >= 8 ? `
+  // Unified Emergency Button (replaces static alert)
+  // Shows if severity >= 8 OR if API explicitly says call_emergency
+  const showEmergencyBtn = data.severity_score >= 8 || data.call_emergency;
+  
+  const emergencySection = showEmergencyBtn ? `
     <div style="margin: 1.5rem 0; text-align: center;">
-      <button id="sos-emergency-btn" class="sos-btn">
-        <span class="sos-icon">🆘</span>
-        <span class="sos-text">EMERGENCY SOS</span>
-        <span class="sos-subtitle">Call Emergency Services</span>
+      <button id="sos-emergency-btn" class="sos-btn" onclick="handleSOSEmergency()">
+        <span class="sos-icon">🚨</span>
+        <span class="sos-text">CALL EMERGENCY SERVICES</span>
+        <span class="sos-subtitle">Click to Alert (108)</span>
       </button>
     </div>
   ` : '';
@@ -203,7 +203,7 @@ function displayTraumaResults(data) {
   ` : '';
 
   resultsContainer.innerHTML = `
-    ${emergencyAlert}
+    ${emergencySection}
     
     <div class="card">
       <div class="card-header">
@@ -258,7 +258,10 @@ function displayTraumaResults(data) {
   // Add SOS button event listener if it exists
   const sosBtn = document.getElementById('sos-emergency-btn');
   if (sosBtn) {
+    console.log('SOS Button attached to DOM');
     sosBtn.addEventListener('click', handleSOSEmergency);
+  } else {
+    console.log('SOS Button NOT rendered (Severity < 8)');
   }
 }
 
