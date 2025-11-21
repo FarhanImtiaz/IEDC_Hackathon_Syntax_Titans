@@ -1,0 +1,783 @@
+/**
+ * Gram-Sahayak Platform - Main Application Logic
+ * Handles UI interactions, file uploads, and module switching
+ */
+
+// ==================== Navigation & Module Switching ====================
+
+document.addEventListener('DOMContentLoaded', () => {
+  initializeNavigation();
+  initializeTraumaTriage();
+  initializePolyglotScribe();
+  initializeLensLaboratory();
+  initializeRxVox();
+});
+
+function initializeNavigation() {
+  const navLinks = document.querySelectorAll('.nav-link');
+  const modules = document.querySelectorAll('.module-container');
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      // Remove active class from all links and modules
+      navLinks.forEach(l => l.classList.remove('active'));
+      modules.forEach(m => m.classList.remove('active'));
+
+      // Add active class to clicked link
+      link.classList.add('active');
+
+      // Show corresponding module
+      const moduleId = link.getAttribute('data-module');
+      const moduleElement = document.getElementById(moduleId);
+      if (moduleElement) {
+        moduleElement.classList.add('active');
+      }
+    });
+  });
+}
+
+// ==================== Utility Functions ====================
+
+function setupFileUpload(uploadZoneId, fileInputId, previewContainerId, previewElementId, onFileSelected) {
+  const uploadZone = document.getElementById(uploadZoneId);
+  const fileInput = document.getElementById(fileInputId);
+  const previewContainer = document.getElementById(previewContainerId);
+
+  // Click to upload
+  uploadZone.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  // Handle file selection
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleFileSelection(file, previewContainer, previewElementId, onFileSelected);
+    }
+  });
+
+  // Drag and drop
+  uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('drag-over');
+  });
+
+  uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('drag-over');
+  });
+
+  uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      fileInput.files = e.dataTransfer.files;
+      handleFileSelection(file, previewContainer, previewElementId, onFileSelected);
+    }
+  });
+}
+
+function handleFileSelection(file, previewContainer, previewElementId, callback) {
+  previewContainer.classList.remove('hidden');
+
+  const previewElement = document.getElementById(previewElementId);
+
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewElement.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  } else if (file.type.startsWith('audio/')) {
+    const audioUrl = URL.createObjectURL(file);
+    previewElement.src = audioUrl;
+  }
+
+  if (callback) {
+    callback(file);
+  }
+}
+
+function showLoading(containerId) {
+  const container = document.getElementById(containerId);
+  container.classList.remove('hidden');
+  container.innerHTML = `
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Processing with Gemini AI...</p>
+    </div>
+  `;
+}
+
+function showError(containerId, message) {
+  const container = document.getElementById(containerId);
+  container.classList.remove('hidden');
+  container.innerHTML = `
+    <div class="alert alert-error">
+      <span>⚠️</span>
+      <span>${message}</span>
+    </div>
+  `;
+}
+
+// ==================== Module 1: ET-AI Trauma Triage ====================
+
+let traumaFile = null;
+
+function initializeTraumaTriage() {
+  setupFileUpload(
+    'trauma-upload-zone',
+    'trauma-file-input',
+    'trauma-preview',
+    'trauma-preview-image',
+    (file) => {
+      traumaFile = file;
+      document.getElementById('trauma-analyze-btn').disabled = false;
+      document.getElementById('trauma-clear-btn').classList.remove('hidden');
+    }
+  );
+
+  document.getElementById('trauma-analyze-btn').addEventListener('click', analyzeTraumaImage);
+  document.getElementById('trauma-clear-btn').addEventListener('click', clearTrauma);
+}
+
+async function analyzeTraumaImage() {
+  if (!traumaFile) return;
+
+  const analyzeBtn = document.getElementById('trauma-analyze-btn');
+  analyzeBtn.disabled = true;
+  analyzeBtn.innerHTML = '<div class="loading-spinner"></div> <span>Analyzing...</span>';
+
+  showLoading('trauma-results');
+
+  try {
+    const result = await window.GeminiAPI.analyzeTrauma(traumaFile);
+    displayTraumaResults(result);
+  } catch (error) {
+    console.error('Trauma analysis error:', error);
+    showError('trauma-results', `Error: ${error.message}`);
+  } finally {
+    analyzeBtn.disabled = false;
+    analyzeBtn.innerHTML = '<span>🔍 Analyze Trauma</span>';
+  }
+}
+
+function displayTraumaResults(data) {
+  const resultsContainer = document.getElementById('trauma-results');
+
+  let severityClass = 'severity-low';
+  if (data.severity_score >= 7) severityClass = 'severity-high';
+  else if (data.severity_score >= 4) severityClass = 'severity-medium';
+
+  const emergencyAlert = data.call_emergency ? `
+    <div class="emergency-alert">
+      🚨 CALL EMERGENCY SERVICES IMMEDIATELY 🚨
+    </div>
+  ` : '';
+
+  const actionSteps = data.immediate_actions.map(step =>
+    `<li class="action-step">${step}</li>`
+  ).join('');
+
+  const warningSignsHtml = data.warning_signs && data.warning_signs.length > 0 ? `
+    <div class="result-card">
+      <div class="result-label">⚠️ Warning Signs</div>
+      <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-primary);">
+        ${data.warning_signs.map(sign => `<li>${sign}</li>`).join('')}
+      </ul>
+    </div>
+  ` : '';
+
+  resultsContainer.innerHTML = `
+    ${emergencyAlert}
+    
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Trauma Assessment Results</h3>
+      </div>
+      
+      <div class="results-grid">
+        <div class="result-card">
+          <div class="result-label">Severity Score</div>
+          <div class="severity-indicator ${severityClass}">
+            ${data.severity_score}/10
+          </div>
+        </div>
+        
+        <div class="result-card">
+          <div class="result-label">Severity Level</div>
+          <div class="result-value">${data.severity_level}</div>
+        </div>
+        
+        <div class="result-card">
+          <div class="result-label">Injury Type</div>
+          <div class="result-value">${data.injury_type}</div>
+        </div>
+        
+        <div class="result-card">
+          <div class="result-label">Emergency Response</div>
+          <div class="result-value">${data.call_emergency ? '🚨 YES - Call Now' : '✅ No immediate emergency'}</div>
+        </div>
+      </div>
+      
+      <div class="mt-3">
+        <div class="result-card">
+          <div class="result-label">Clinical Assessment</div>
+          <div class="result-value">${data.assessment}</div>
+        </div>
+      </div>
+      
+      <div class="mt-3">
+        <div class="card-title mb-2">Immediate Action Steps</div>
+        <ol class="action-steps">
+          ${actionSteps}
+        </ol>
+      </div>
+      
+      ${warningSignsHtml}
+      
+      <details class="mt-3">
+        <summary style="cursor: pointer; color: var(--primary-teal); font-weight: 600;">
+          View Raw JSON Response
+        </summary>
+        <div class="json-display mt-2">
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        </div>
+      </details>
+    </div>
+  `;
+
+  resultsContainer.classList.remove('hidden');
+}
+
+function clearTrauma() {
+  traumaFile = null;
+  document.getElementById('trauma-file-input').value = '';
+  document.getElementById('trauma-preview').classList.add('hidden');
+  document.getElementById('trauma-results').classList.add('hidden');
+  document.getElementById('trauma-analyze-btn').disabled = true;
+  document.getElementById('trauma-clear-btn').classList.add('hidden');
+}
+
+// ==================== Module 2: Polyglot Scribe ====================
+
+let scribeFile = null;
+
+function initializePolyglotScribe() {
+  setupFileUpload(
+    'scribe-upload-zone',
+    'scribe-file-input',
+    'scribe-preview',
+    'scribe-audio-player',
+    (file) => {
+      scribeFile = file;
+      document.getElementById('scribe-filename').textContent = file.name;
+      document.getElementById('scribe-transcribe-btn').disabled = false;
+      document.getElementById('scribe-clear-btn').classList.remove('hidden');
+    }
+  );
+
+  document.getElementById('scribe-transcribe-btn').addEventListener('click', transcribeAudio);
+  document.getElementById('scribe-clear-btn').addEventListener('click', clearScribe);
+}
+
+async function transcribeAudio() {
+  if (!scribeFile) return;
+
+  const transcribeBtn = document.getElementById('scribe-transcribe-btn');
+  transcribeBtn.disabled = true;
+  transcribeBtn.innerHTML = '<div class="loading-spinner"></div> <span>Transcribing...</span>';
+
+  showLoading('scribe-results');
+
+  try {
+    const result = await window.GeminiAPI.transcribeConsultation(scribeFile);
+    displayScribeResults(result);
+  } catch (error) {
+    console.error('Transcription error:', error);
+    showError('scribe-results', `Error: ${error.message}`);
+  } finally {
+    transcribeBtn.disabled = false;
+    transcribeBtn.innerHTML = '<span>📝 Transcribe & Translate</span>';
+  }
+}
+
+function displayScribeResults(data) {
+  const resultsContainer = document.getElementById('scribe-results');
+
+  const symptomsHtml = data.symptoms.map(symptom =>
+    `<li style="padding: 0.5rem; background: var(--bg-secondary); margin-bottom: 0.5rem; border-radius: 8px;">${symptom}</li>`
+  ).join('');
+
+  resultsContainer.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Clinical Documentation</h3>
+      </div>
+      
+      <div class="results-grid">
+        <div class="result-card">
+          <div class="result-label">Detected Language</div>
+          <div class="result-value">${data.detected_language}</div>
+        </div>
+        
+        <div class="result-card">
+          <div class="result-label">Chief Complaint</div>
+          <div class="result-value">${data.chief_complaint}</div>
+        </div>
+        
+        <div class="result-card">
+          <div class="result-label">Duration</div>
+          <div class="result-value">${data.duration}</div>
+        </div>
+      </div>
+      
+      <div class="mt-3">
+        <div class="result-card">
+          <div class="result-label">Symptoms</div>
+          <ul style="list-style: none; padding: 0; margin-top: 0.5rem;">
+            ${symptomsHtml}
+          </ul>
+        </div>
+      </div>
+      
+      ${data.medical_history ? `
+        <div class="mt-3">
+          <div class="result-card">
+            <div class="result-label">Medical History</div>
+            <div class="result-value">${data.medical_history}</div>
+          </div>
+        </div>
+      ` : ''}
+      
+      <div class="mt-3">
+        <div class="result-card">
+          <div class="result-label">📋 Clinical Note (EHR-Ready)</div>
+          <div class="result-value" style="white-space: pre-wrap; line-height: 1.8;">${data.clinical_note}</div>
+        </div>
+      </div>
+      
+      <div class="mt-3">
+        <details>
+          <summary style="cursor: pointer; color: var(--primary-teal); font-weight: 600; margin-bottom: 1rem;">
+            View Original Transcript
+          </summary>
+          <div class="result-card">
+            <div class="result-label">Original Language</div>
+            <div class="result-value" style="white-space: pre-wrap;">${data.transcript_original}</div>
+          </div>
+          <div class="result-card mt-2">
+            <div class="result-label">English Translation</div>
+            <div class="result-value" style="white-space: pre-wrap;">${data.transcript_english}</div>
+          </div>
+        </details>
+      </div>
+      
+      <details class="mt-3">
+        <summary style="cursor: pointer; color: var(--primary-teal); font-weight: 600;">
+          View Raw JSON Response
+        </summary>
+        <div class="json-display mt-2">
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        </div>
+      </details>
+    </div>
+  `;
+
+  resultsContainer.classList.remove('hidden');
+}
+
+function clearScribe() {
+  scribeFile = null;
+  document.getElementById('scribe-file-input').value = '';
+  document.getElementById('scribe-preview').classList.add('hidden');
+  document.getElementById('scribe-results').classList.add('hidden');
+  document.getElementById('scribe-transcribe-btn').disabled = true;
+  document.getElementById('scribe-clear-btn').classList.add('hidden');
+}
+
+// ==================== Module 3: Lens-Laboratory ====================
+
+let lensFile = null;
+
+function initializeLensLaboratory() {
+  setupFileUpload(
+    'lens-upload-zone',
+    'lens-file-input',
+    'lens-preview',
+    'lens-preview-image',
+    (file) => {
+      lensFile = file;
+      document.getElementById('lens-analyze-btn').disabled = false;
+      document.getElementById('lens-clear-btn').classList.remove('hidden');
+    }
+  );
+
+  document.getElementById('lens-analyze-btn').addEventListener('click', analyzeMedicalImage);
+  document.getElementById('lens-clear-btn').addEventListener('click', clearLens);
+}
+
+async function analyzeMedicalImage() {
+  if (!lensFile) return;
+
+  const analyzeBtn = document.getElementById('lens-analyze-btn');
+  analyzeBtn.disabled = true;
+  analyzeBtn.innerHTML = '<div class="loading-spinner"></div> <span>Analyzing...</span>';
+
+  showLoading('lens-results');
+
+  try {
+    const result = await window.GeminiAPI.analyzeMedicalImage(lensFile);
+    displayLensResults(result);
+  } catch (error) {
+    console.error('Medical image analysis error:', error);
+    showError('lens-results', `Error: ${error.message}`);
+  } finally {
+    analyzeBtn.disabled = false;
+    analyzeBtn.innerHTML = '<span>🔬 Analyze Image</span>';
+  }
+}
+
+function displayLensResults(data) {
+  const resultsContainer = document.getElementById('lens-results');
+
+  const findingsHtml = data.findings.map((finding, idx) => `
+    <div class="result-card">
+      <div class="result-label">Finding ${idx + 1}</div>
+      <p style="margin: 0.5rem 0;"><strong>Observation:</strong> ${finding.finding}</p>
+      <p style="margin: 0.5rem 0;"><strong>Location:</strong> ${finding.location}</p>
+      <p style="margin: 0.5rem 0;"><strong>Significance:</strong> ${finding.significance}</p>
+    </div>
+  `).join('');
+
+  const abnormalitiesHtml = data.abnormality_details && data.abnormality_details.length > 0 ? `
+    <div class="mt-3">
+      <div class="result-card">
+        <div class="result-label">🔍 Detected Abnormalities</div>
+        <ul style="margin: 0.5rem 0; padding-left: 1.5rem; color: var(--text-primary);">
+          ${data.abnormality_details.map(detail => `<li>${detail}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  ` : '';
+
+  const diagnosisHtml = data.differential_diagnosis && data.differential_diagnosis.length > 0 ? `
+    <div class="result-card">
+      <div class="result-label">Differential Diagnosis</div>
+      <ul style="margin: 0.5rem 0; padding-left: 1.5rem; color: var(--text-primary);">
+        ${data.differential_diagnosis.map(dx => `<li>${dx}</li>`).join('')}
+      </ul>
+    </div>
+  ` : '';
+
+  const urgentAlert = data.urgent_consultation_needed ? `
+    <div class="alert alert-warning">
+      <span>⚠️</span>
+      <span><strong>Urgent specialist consultation recommended</strong></span>
+    </div>
+  ` : '';
+
+  resultsContainer.innerHTML = `
+    ${urgentAlert}
+    
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Diagnostic Analysis</h3>
+      </div>
+      
+      <div class="results-grid">
+        <div class="result-card">
+          <div class="result-label">Image Type</div>
+          <div class="result-value">${data.image_type}</div>
+        </div>
+        
+        <div class="result-card">
+          <div class="result-label">Body Part</div>
+          <div class="result-value">${data.body_part}</div>
+        </div>
+        
+        <div class="result-card">
+          <div class="result-label">Confidence Score</div>
+          <div class="result-value">
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-teal);">
+              ${data.confidence_score}%
+            </div>
+          </div>
+        </div>
+        
+        <div class="result-card">
+          <div class="result-label">Abnormalities</div>
+          <div class="result-value">
+            ${data.abnormalities_detected ? '⚠️ Detected' : '✅ None Detected'}
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-3">
+        <div class="card-title mb-2">Clinical Findings</div>
+        <div class="results-grid">
+          ${findingsHtml}
+        </div>
+      </div>
+      
+      ${abnormalitiesHtml}
+      
+      <div class="mt-3">
+        <div class="result-card">
+          <div class="result-label">📋 Recommendation for GP</div>
+          <div class="result-value" style="white-space: pre-wrap; line-height: 1.8;">${data.recommendation}</div>
+        </div>
+      </div>
+      
+      ${diagnosisHtml ? `<div class="mt-3">${diagnosisHtml}</div>` : ''}
+      
+      <details class="mt-3">
+        <summary style="cursor: pointer; color: var(--primary-teal); font-weight: 600;">
+          View Raw JSON Response
+        </summary>
+        <div class="json-display mt-2">
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        </div>
+      </details>
+    </div>
+  `;
+
+  resultsContainer.classList.remove('hidden');
+}
+
+function clearLens() {
+  lensFile = null;
+  document.getElementById('lens-file-input').value = '';
+  document.getElementById('lens-preview').classList.add('hidden');
+  document.getElementById('lens-results').classList.add('hidden');
+  document.getElementById('lens-analyze-btn').disabled = true;
+  document.getElementById('lens-clear-btn').classList.add('hidden');
+}
+
+// ==================== Module 4: Rx-Vox ====================
+
+let rxFile = null;
+let prescriptionData = null;
+
+function initializeRxVox() {
+  setupFileUpload(
+    'rx-upload-zone',
+    'rx-file-input',
+    'rx-preview',
+    'rx-preview-image',
+    (file) => {
+      rxFile = file;
+      document.getElementById('rx-read-btn').disabled = false;
+      document.getElementById('rx-clear-btn').classList.remove('hidden');
+    }
+  );
+
+  document.getElementById('rx-read-btn').addEventListener('click', readPrescription);
+  document.getElementById('rx-clear-btn').addEventListener('click', clearRx);
+}
+
+async function readPrescription() {
+  if (!rxFile) return;
+
+  const readBtn = document.getElementById('rx-read-btn');
+  readBtn.disabled = true;
+  readBtn.innerHTML = '<div class="loading-spinner"></div> <span>Reading...</span>';
+
+  showLoading('rx-results');
+
+  try {
+    const result = await window.GeminiAPI.readPrescription(rxFile);
+    prescriptionData = result;
+    displayRxResults(result);
+  } catch (error) {
+    console.error('Prescription reading error:', error);
+    showError('rx-results', `Error: ${error.message}`);
+  } finally {
+    readBtn.disabled = false;
+    readBtn.innerHTML = '<span>📖 Read Prescription</span>';
+  }
+}
+
+function displayRxResults(data) {
+  const resultsContainer = document.getElementById('rx-results');
+
+  const medicationsHtml = data.medications.map((med, idx) => `
+    <div class="card mt-2" id="rx-medication-${idx}">
+      <div class="card-header">
+        <h4 style="font-size: 1.125rem; margin: 0;">💊 Medication ${idx + 1}</h4>
+      </div>
+      <div class="results-grid">
+        <div class="result-card">
+          <div class="result-label">Medicine</div>
+          <div class="result-value">${med.medicine_name}</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">Dosage</div>
+          <div class="result-value">${med.dosage}</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">Frequency</div>
+          <div class="result-value">${med.frequency}</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">Duration</div>
+          <div class="result-value">${med.duration}</div>
+        </div>
+      </div>
+      ${med.instructions ? `
+        <div class="mt-2">
+          <div class="result-card">
+            <div class="result-label">Special Instructions</div>
+            <div class="result-value">${med.instructions}</div>
+          </div>
+        </div>
+      ` : ''}
+      <div class="mt-2">
+        <div class="result-card" style="background: var(--gradient-primary); padding: 1rem; border-radius: 12px;">
+          <div class="result-label" style="color: white; opacity: 0.9;">🔊 Patient Instructions (English)</div>
+          <div class="result-value" style="color: white; font-size: 1.125rem; font-weight: 600;">
+            ${med.colloquial_instruction}
+          </div>
+          <div id="rx-translated-${idx}" class="mt-2" style="display: none;">
+            <div class="result-label" style="color: white; opacity: 0.9;">🌐 Translated Instructions</div>
+            <div class="result-value translated-text" style="color: white; font-size: 1.25rem; font-weight: 700; margin-top: 0.5rem;">
+              <!-- Translated text will appear here -->
+            </div>
+          </div>
+          <button class="btn btn-secondary mt-2" onclick="speakInstructionInLanguage(${idx}, '${med.colloquial_instruction.replace(/'/g, "\\'")}', event)">
+            🔊 Translate & Play Audio
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  const headerInfo = `
+    <div class="results-grid mb-3">
+      ${data.doctor_name ? `
+        <div class="result-card">
+          <div class="result-label">Doctor</div>
+          <div class="result-value">${data.doctor_name}</div>
+        </div>
+      ` : ''}
+      ${data.patient_name ? `
+        <div class="result-card">
+          <div class="result-label">Patient</div>
+          <div class="result-value">${data.patient_name}</div>
+        </div>
+      ` : ''}
+      ${data.date ? `
+        <div class="result-card">
+          <div class="result-label">Date</div>
+          <div class="result-value">${data.date}</div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  const adviceHtml = data.general_advice ? `
+    <div class="mt-3">
+      <div class="result-card">
+        <div class="result-label">General Advice</div>
+        <div class="result-value">${data.general_advice}</div>
+      </div>
+    </div>
+  ` : '';
+
+  const followUpHtml = data.follow_up ? `
+    <div class="mt-3">
+      <div class="alert alert-info">
+        <span>📅</span>
+        <span><strong>Follow-up:</strong> ${data.follow_up}</span>
+      </div>
+    </div>
+  ` : '';
+
+  resultsContainer.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Prescription Details</h3>
+      </div>
+      
+      ${headerInfo}
+      
+      <div class="card-title mb-2">Medications</div>
+      ${medicationsHtml}
+      
+      ${adviceHtml}
+      ${followUpHtml}
+      
+      <details class="mt-3">
+        <summary style="cursor: pointer; color: var(--primary-teal); font-weight: 600;">
+          View Raw JSON Response
+        </summary>
+        <div class="json-display mt-2">
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        </div>
+      </details>
+    </div>
+  `;
+
+  resultsContainer.classList.remove('hidden');
+}
+
+// Global function for text-to-speech with translation
+window.speakInstructionInLanguage = async function (medIndex, englishText, event) {
+  const languageSelect = document.getElementById('rx-language-select');
+  const selectedLanguage = languageSelect.value;
+  const translatedContainer = document.getElementById(`rx-translated-${medIndex}`);
+  const translatedTextElement = translatedContainer.querySelector('.translated-text');
+  const button = event.target;
+
+  // Save original button text
+  const originalButtonText = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = '<div class="loading-spinner"></div> <span>Translating...</span>';
+
+  try {
+    // Show the translated container
+    translatedContainer.style.display = 'block';
+    translatedTextElement.innerHTML = '<div class="loading-spinner" style="margin: 0.5rem auto;"></div>';
+
+    // Translate to selected language
+    const translatedText = await window.GeminiAPI.translateToLanguage(englishText, selectedLanguage);
+
+    // Display translated text
+    translatedTextElement.textContent = translatedText;
+
+    // Update button to show speaking
+    button.innerHTML = '<div class="loading-spinner"></div> <span>Playing Audio...</span>';
+
+    // Speak in the selected language
+    await window.GeminiAPI.textToSpeech(translatedText, selectedLanguage);
+
+    console.log('Audio playback completed');
+    button.innerHTML = '✅ Audio Played';
+
+    // Reset button after 2 seconds
+    setTimeout(() => {
+      button.disabled = false;
+      button.innerHTML = '🔊 Play Audio Again';
+    }, 2000);
+
+  } catch (error) {
+    console.error('Translation/TTS error:', error);
+    translatedTextElement.innerHTML = `<span style="color: #ef4444;">Error: ${error.message}</span>`;
+    button.disabled = false;
+    button.innerHTML = originalButtonText;
+    alert('Error during translation or speech: ' + error.message);
+  }
+};
+
+function clearRx() {
+  rxFile = null;
+  prescriptionData = null;
+  document.getElementById('rx-file-input').value = '';
+  document.getElementById('rx-preview').classList.add('hidden');
+  document.getElementById('rx-results').classList.add('hidden');
+  document.getElementById('rx-read-btn').disabled = true;
+  document.getElementById('rx-clear-btn').classList.add('hidden');
+}
