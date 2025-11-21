@@ -16,34 +16,45 @@
 
 /* ==================== Design Tokens ==================== */
 :root {
-    /* Color Palette - Deep Dark Mode */
+    /* Enhanced Color Palette - Sophisticated Multi-Color Scheme */
     --color-bg-base: #0a0a0f;
     --color-bg-elevated: #13131a;
     --color-bg-surface: #1a1a24;
     --color-bg-hover: #20202e;
     --color-bg-active: #2a2a3a;
 
-    /* Gradients - Subtle & Refined */
+    /* Rich Gradient Collection */
     --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --gradient-accent: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --gradient-warning: linear-gradient(135deg, #ffc837 0%, #ff8008 100%);
-    --gradient-mesh: radial-gradient(at 40% 20%, hsla(250, 85%, 60%, 0.12) 0px, transparent 50%),
-        radial-gradient(at 80% 80%, hsla(200, 85%, 60%, 0.12) 0px, transparent 50%),
-        radial-gradient(at 0% 50%, hsla(280, 85%, 60%, 0.08) 0px, transparent 50%);
+    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-teal: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --gradient-sunset: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    --gradient-ocean: linear-gradient(135deg, #2afadf 0%, #4c83ff 100%);
+    --gradient-fire: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+    --gradient-aurora: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    --gradient-purple: linear-gradient(135deg, #c471ed 0%, #f64f59 100%);
+    --gradient-green: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+    --gradient-gold: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+
+    /* Multi-color Mesh Background */
+    --gradient-mesh: radial-gradient(at 40% 20%, hsla(280, 85%, 60%, 0.15) 0px, transparent 50%),
+        radial-gradient(at 80% 80%, hsla(200, 85%, 60%, 0.15) 0px, transparent 50%),
+        radial-gradient(at 0% 50%, hsla(340, 85%, 60%, 0.12) 0px, transparent 50%),
+        radial-gradient(at 60% 10%, hsla(180, 85%, 60%, 0.1) 0px, transparent 50%),
+        radial-gradient(at 20% 90%, hsla(50, 85%, 60%, 0.08) 0px, transparent 50%);
+
+    /* Vibrant Accent Colors */
+    --accent-purple: #667eea;
+    --accent-pink: #f5576c;
+    --accent-cyan: #00f2fe;
+    --accent-orange: #feca57;
+    --accent-green: #a8e063;
+    --accent-blue: #4c83ff;
 
     /* Text Hierarchy - Strict */
     --text-primary: #ffffff;
     --text-secondary: #a1a1b5;
     --text-tertiary: #6b6b80;
     --text-muted: #47475a;
-
-    /* Accent Colors */
-    --accent-primary: #667eea;
-    --accent-secondary: #764ba2;
-    --accent-success: #00f2fe;
-    --accent-warning: #ffc837;
-    --accent-error: #f5576c;
 
     /* Borders - Ultra Thin */
     --border-width: 0.5px;
@@ -358,17 +369,56 @@ body::before {
     flex-direction: column;
     gap: var(--space-md);
     padding: var(--space-lg) 0;
+    position: relative;
+}
+
+.module-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -2rem;
+    width: calc(100% + 4rem);
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.05), transparent);
+    pointer-events: none;
+    border-radius: var(--radius-lg);
 }
 
 .module-title {
     font-size: var(--text-4xl);
     font-weight: 700;
     letter-spacing: -0.03em;
-    background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     line-height: 1.2;
+    position: relative;
+}
+
+/* Different colors for different modules */
+#trauma-triage .module-title {
+    background: var(--gradient-secondary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+#polyglot-scribe .module-title {
+    background: var(--gradient-ocean);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+#lens-laboratory .module-title {
+    background: var(--gradient-purple);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+#rx-vox .module-title {
+    background: var(--gradient-teal);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .module-description {
@@ -398,20 +448,41 @@ body::before {
     top: 0;
     left: 0;
     width: 100%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    height: 2px;
+    background: var(--gradient-primary);
     opacity: 0;
     transition: opacity var(--transition-base);
 }
 
 .card:hover {
     border-color: var(--border-hover);
-    box-shadow: var(--shadow-xl);
+    box-shadow: var(--shadow-xl), 0 0 30px rgba(102, 126, 234, 0.2);
     transform: translateY(-2px);
 }
 
 .card:hover::before {
-    opacity: 1;
+    opacity: 0.8;
+}
+
+/* Assign different gradient colors to different cards for variety */
+.card:nth-child(1)::before {
+    background: var(--gradient-primary);
+}
+
+.card:nth-child(2)::before {
+    background: var(--gradient-teal);
+}
+
+.card:nth-child(3)::before {
+    background: var(--gradient-sunset);
+}
+
+.card:nth-child(4)::before {
+    background: var(--gradient-ocean);
+}
+
+.card:nth-child(5)::before {
+    background: var(--gradient-purple);
 }
 
 .card-header {
