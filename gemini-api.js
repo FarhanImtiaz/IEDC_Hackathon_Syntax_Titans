@@ -49,17 +49,32 @@ function getMimeType(file) {
  * @param {string} modelName - Gemini model to use
  */
 const AVAILABLE_MODELS = [
-  'gemini-1.5-flash-latest',
   'gemini-1.5-flash',
   'gemini-1.5-flash-001',
+  'gemini-1.5-flash-002',
   'gemini-1.5-pro',
-  'gemini-1.5-pro-latest'
+  'gemini-1.5-pro-001',
+  'gemini-1.5-pro-002',
+  'gemini-2.0-flash-exp'
 ];
 
-async function callGeminiAPI(prompt, file = null, modelName = 'gemini-1.5-flash-latest') {
+// Debugging: List available models
+async function listModels() {
+  try {
+    const response = await fetch(`${GEMINI_API_BASE}/models?key=${GEMINI_API_KEY}`);
+    const data = await response.json();
+    console.log('Available Gemini Models:', data.models?.map(m => m.name) || data);
+  } catch (e) {
+    console.error('Failed to list models:', e);
+  }
+}
+
+async function callGeminiAPI(prompt, file = null, modelName = 'gemini-1.5-flash') {
   // Helper to try a specific model
   const tryModel = async (model) => {
-    const url = `${GEMINI_API_BASE}/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+    // Ensure model name doesn't have 'models/' prefix if already present
+    const cleanModelName = model.replace('models/', '');
+    const url = `${GEMINI_API_BASE}/models/${cleanModelName}:generateContent?key=${GEMINI_API_KEY}`;
     let requestBody = {
       contents: [{
         parts: [
@@ -144,6 +159,7 @@ async function callGeminiAPI(prompt, file = null, modelName = 'gemini-1.5-flash-
 
   // If all models failed
   console.error('All models failed. Last error:', lastError);
+  listModels(); // Log available models for debugging
   throw lastError || new Error('Failed to generate content with any available model');
 }
 
