@@ -90,10 +90,31 @@ async function callGeminiAPI(prompt, file = null, modelName = 'gemini-2.5-flash'
 
     // Extract the text response
     if (data.candidates && data.candidates.length > 0) {
-      const text = data.candidates[0].content.parts[0].text;
-      return text;
+      const candidate = data.candidates[0];
+
+      // Check if content was blocked
+      if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+        console.error('Content generation stopped:', candidate.finishReason);
+        console.error('Safety ratings:', candidate.safetyRatings);
+        throw new Error(`Content blocked: ${candidate.finishReason}. The AI may have safety concerns with the input.`);
+      }
+
+      if (candidate.content && candidate.content.parts && candidate.content.parts[0]) {
+        const text = candidate.content.parts[0].text;
+        return text;
+      } else {
+        console.error('No text in response:', candidate);
+        throw new Error('No text content in API response');
+      }
     } else {
-      throw new Error('No response generated from API');
+      console.error('Full API response:', data);
+
+      // Check for prompt feedback (safety issues)
+      if (data.promptFeedback && data.promptFeedback.blockReason) {
+        throw new Error(`Input blocked: ${data.promptFeedback.blockReason}. ${data.promptFeedback.safetyRatings ? 'Safety concern detected.' : ''}`);
+      }
+
+      throw new Error('No response generated from API. The model may not have generated content.');
     }
   } catch (error) {
     console.error('Gemini API Error:', error);
