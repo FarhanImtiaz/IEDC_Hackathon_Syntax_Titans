@@ -1096,3 +1096,14 @@ body::before {
    - State variables preserved
    - Event handlers maintained
    ================================================================================== */
+
+/* Fix for emoji icons in titles */
+.title-icon {
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    text-fill-color: initial !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
