@@ -988,6 +988,108 @@ body::before {
     }
 }
 
+/* SOS Emergency Button */
+.sos-btn {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl) var(--space-2xl);
+    color: white;
+    font-family: var(--font-sans);
+    font-size: var(--text-xl);
+    font-weight: 800;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    box-shadow: 0 10px 40px rgba(220, 38, 38, 0.5), 0 0 60px rgba(220, 38, 38, 0.3);
+    position: relative;
+    overflow: hidden;
+    min-width: 320px;
+    animation: sosPulse 2s ease-in-out infinite;
+}
+
+.sos-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: rotate 4s linear infinite;
+}
+
+@keyframes sosPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 10px 40px rgba(220, 38, 38, 0.5), 0 0 60px rgba(220, 38, 38, 0.3);
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow: 0 15px 60px rgba(220, 38, 38, 0.7), 0 0 80px rgba(220, 38, 38, 0.5);
+        transform: scale(1.03);
+    }
+}
+
+@keyframes rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.sos-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 20px 60px rgba(220, 38, 38, 0.7), 0 0 100px rgba(220, 38, 38, 0.6);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.sos-btn:active {
+    transform: scale(0.98);
+}
+
+.sos-icon {
+    font-size: 3rem;
+    animation: bounce 1s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.sos-text {
+    font-size: var(--text-2xl);
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.sos-subtitle {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    opacity: 0.9;
+    letter-spacing: 0.02em;
+}
+
+
 /* ==================== Responsive Design ==================== */
 @media (max-width: 1024px) {
     .app-container {

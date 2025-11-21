@@ -178,6 +178,17 @@ function displayTraumaResults(data) {
     </div>
   ` : '';
 
+  // SOS Button appears when severity > 8
+  const sosButton = data.severity_score > 8 ? `
+    <div style="margin: 1.5rem 0; text-align: center;">
+      <button id="sos-emergency-btn" class="sos-btn">
+        <span class="sos-icon">🆘</span>
+        <span class="sos-text">EMERGENCY SOS</span>
+        <span class="sos-subtitle">Call Emergency Services</span>
+      </button>
+    </div>
+  ` : '';
+
   const actionSteps = data.immediate_actions.map(step =>
     `<li class="action-step">${step}</li>`
   ).join('');
@@ -202,19 +213,11 @@ function displayTraumaResults(data) {
       <div class="results-grid">
         <div class="result-card">
           <div class="result-label">Severity Score</div>
-          <div class="severity-indicator ${severityClass}">
-            ${data.severity_score}/10
+          <div class="result-value">
+            <div class="severity-indicator ${severityClass}">
+              ${data.severity_score}/10
+            </div>
           </div>
-        </div>
-        
-        <div class="result-card">
-          <div class="result-label">Severity Level</div>
-          <div class="result-value">${data.severity_level}</div>
-        </div>
-        
-        <div class="result-card">
-          <div class="result-label">Injury Type</div>
-          <div class="result-value">${data.injury_type}</div>
         </div>
         
         <div class="result-card">
@@ -251,6 +254,12 @@ function displayTraumaResults(data) {
   `;
 
   resultsContainer.classList.remove('hidden');
+
+  // Add SOS button event listener if it exists
+  const sosBtn = document.getElementById('sos-emergency-btn');
+  if (sosBtn) {
+    sosBtn.addEventListener('click', handleSOSEmergency);
+  }
 }
 
 function clearTrauma() {
@@ -261,6 +270,72 @@ function clearTrauma() {
   document.getElementById('trauma-analyze-btn').disabled = true;
   document.getElementById('trauma-clear-btn').classList.add('hidden');
 }
+
+function handleSOSEmergency() {
+  // Create custom styled alert overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+  `;
+
+  const alertBox = document.createElement('div');
+  alertBox.style.cssText = `
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(220, 38, 38, 0.5);
+    text-align: center;
+    max-width: 400px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+  `;
+
+  alertBox.innerHTML = `
+    <div style="font-size: 4rem; margin-bottom: 1rem;">🚨</div>
+    <h2 style="color: white; font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700;">
+      EMERGENCY SERVICES CALLED
+    </h2>
+    <p style="color: rgba(255, 255, 255, 0.9); font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6;">
+      Help is on the way. Stay calm and follow the immediate action steps provided.
+    </p>
+    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; margin-bottom: 1.5rem;">
+      Emergency Number: 108 (India)
+    </p>
+    <button onclick="this.closest('[style*=fixed]').remove()" style="
+      background: white;
+      color: #dc2626;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    ">
+      OK
+    </button>
+  `;
+
+  overlay.appendChild(alertBox);
+  document.body.appendChild(overlay);
+
+  // Close on overlay click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+    }
+  });
+}
+
 
 // ==================== Module 2: Polyglot Scribe ====================
 
