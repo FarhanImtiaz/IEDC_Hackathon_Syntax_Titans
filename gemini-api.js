@@ -49,13 +49,12 @@ function getMimeType(file) {
  * @param {string} modelName - Gemini model to use
  */
 const AVAILABLE_MODELS = [
+  'gemini-1.5-flash-8b',
   'gemini-1.5-flash',
   'gemini-1.5-flash-001',
   'gemini-1.5-flash-002',
   'gemini-1.5-pro',
-  'gemini-1.5-pro-001',
-  'gemini-1.5-pro-002',
-  'gemini-2.0-flash-exp'
+  'gemini-1.5-pro-001'
 ];
 
 // Debugging: List available models
@@ -69,7 +68,7 @@ async function listModels() {
   }
 }
 
-async function callGeminiAPI(prompt, file = null, modelName = 'gemini-1.5-flash') {
+async function callGeminiAPI(prompt, file = null, modelName = 'gemini-1.5-flash-8b') {
   // Helper to try a specific model
   const tryModel = async (model) => {
     // Ensure model name doesn't have 'models/' prefix if already present
