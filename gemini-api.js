@@ -312,6 +312,163 @@ Example: "Take one red pill every morning after breakfast with water"`;
 }
 
 /**
+ * Sarvam.ai Speech-to-Text with Auto Language Detection
+ * @param {File} audioFile - Audio file to transcribe
+ * @returns {Object} { transcript, language_code, language }
+ */
+async function transcribeAudioWithSarvam(audioFile) {
+  const SARVAM_API_KEY = 'sk_bwbz2lvp_fH1cCnOrHBJb4djNaIiclkDm';
+  const SARVAM_STT_URL = 'https://api.sarvam.ai/speech-to-text';
+
+  try {
+    // Create FormData for multipart/form-data request
+    const formData = new FormData();
+    formData.append('file', audioFile);
+    formData.append('model', 'saarika:v2.5');
+    formData.append('language_code', 'unknown'); // Auto-detect language
+
+    const response = await fetch(SARVAM_STT_URL, {
+      method: 'POST',
+      headers: {
+        'api-subscription-key': SARVAM_API_KEY
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Sarvam.ai STT Error: ${errorData.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      transcript: data.transcript || '',
+      language_code: data.language_code || 'unknown',
+      language: data.language || 'Unknown'
+    };
+  } catch (error) {
+    console.error('Sarvam.ai STT Error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generate Medical Summary using Gemini
+ * @param {string} transcription - Transcribed conversation
+ * @param {string} sourceLanguage - Original language
+ * @returns {Object} Structured medical summary
+ */
+async function generateMedicalSummary(transcription, sourceLanguage) {
+  const prompt = `You are a medical AI assistant analyzing a doctor-patient conversation transcript.
+
+The conversation was in ${sourceLanguage}. Generate a comprehensive clinical summary suitable for doctor-to-doctor handoff.
+
+Provide a STRICT JSON response with the following structure:
+
+{
+  "chief_complaint": "<main reason for visit>",
+  "duration": "<how long has the problem existed>",
+  "symptoms": "<detailed symptom description>",
+  "medical_history": "<relevant past medical history mentioned>",
+  "physical_exam": "<physical examination findings if mentioned>",
+  "assessment": "<doctor's initial assessment or impression>",
+  "treatment_plan": "<recommended medications, procedures, or treatments>",
+  "follow_up": "<follow-up instructions and timeline>",
+  "red_flags": "<warning signs patient should watch for>"
+}
+
+CRITICAL: Respond ONLY with valid JSON. No markdown, no explanation, just the JSON object.
+
+Use professional medical terminology while remaining clear. This summary will be used by another doctor to understand the patient's case.
+
+Conversation Transcript:
+${transcription}`;
+
+  try {
+    const response = await callGeminiAPI(prompt, null, 'gemini-2.5-flash');
+
+    // Parse JSON response
+    let jsonText = response.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/```\n?/g, '');
+    }
+
+    const result = JSON.parse(jsonText);
+    return result;
+  } catch (error) {
+    console.error('Medical summary generation error:', error);
+    throw new Error('Failed to generate medical summary');
+  }
+}
+
+/**
+ * Translate Medical Summary to Target Language
+ * @param {Object} summary - Medical summary object
+ * @param {string} targetLanguageCode - Target language code (e.g., 'hi-IN')
+ * @returns {Object} Translated summary
+ */
+async function translateMedicalSummary(summary, targetLanguageCode) {
+  const languageNames = {
+    'en-IN': 'English',
+    'hi-IN': 'Hindi',
+    'bn-IN': 'Bengali',
+    'kn-IN': 'Kannada',
+    'ml-IN': 'Malayalam',
+    'mr-IN': 'Marathi',
+    'od-IN': 'Odia',
+    'pa-IN': 'Punjabi',
+    'ta-IN': 'Tamil',
+    'te-IN': 'Telugu',
+    'gu-IN': 'Gujarati'
+  };
+
+  const targetLanguage = languageNames[targetLanguageCode] || 'English';
+
+  const prompt = `Translate the following medical summary to ${targetLanguage}.
+
+Maintain medical terminology accuracy and professional tone. Translate field names as well.
+
+Original Medical Summary (JSON):
+${JSON.stringify(summary, null, 2)}
+
+Provide the translated summary as JSON with the following structure:
+
+{
+  "chief_complaint": "<translated>",
+  "duration": "<translated>",
+  "symptoms": "<translated>",
+  "medical_history": "<translated>",
+  "physical_exam": "<translated>",
+  "assessment": "<translated>",
+  "treatment_plan": "<translated>",
+  "follow_up": "<translated>",
+  "red_flags": "<translated>"
+}
+
+CRITICAL: Respond ONLY with the translated JSON. No markdown, no explanation.`;
+
+  try {
+    const response = await callGeminiAPI(prompt, null, 'gemini-2.5-flash');
+
+    let jsonText = response.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/```\n?/g, '');
+    }
+
+    const result = JSON.parse(jsonText);
+    return result;
+  } catch (error) {
+    console.error('Translation error:', error);
+    throw new Error('Failed to translate medical summary');
+  }
+}
+
+/**
  * Translate text to a specific language using Gemini
  * @param {string} text - Text to translate
  * @param {string} targetLanguage - Target language code (e.g., 'hi-IN', 'mr-IN')
@@ -454,5 +611,8 @@ window.GeminiAPI = {
   analyzeMedicalImage,
   readPrescription,
   translateToLanguage,
-  textToSpeech
+  textToSpeech,
+  transcribeAudioWithSarvam,
+  generateMedicalSummary,
+  translateMedicalSummary
 };

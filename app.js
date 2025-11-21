@@ -288,93 +288,194 @@ async function transcribeAudio() {
   if (!scribeFile) return;
 
   const transcribeBtn = document.getElementById('scribe-transcribe-btn');
-  transcribeBtn.disabled = true;
-  transcribeBtn.innerHTML = '<div class="loading-spinner"></div> <span>Transcribing...</span>';
+  const languageSelect = document.getElementById('scribe-language-select');
+  const selectedLanguage = languageSelect.value;
 
-  showLoading('scribe-results');
+  transcribeBtn.disabled = true;
+  transcribeBtn.innerHTML = '<div class="loading-spinner"></div> <span>Processing...</span>';
+
+  const resultsContainer = document.getElementById('scribe-results');
+  resultsContainer.classList.remove('hidden');
 
   try {
-    const result = await window.GeminiAPI.transcribeConsultation(scribeFile);
-    displayScribeResults(result);
+    // Step 1: Transcribe audio with Sarvam.ai (auto-detect language)
+    resultsContainer.innerHTML = `
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Step 1/3: Transcribing audio with Sarvam.ai...</p>
+      </div>
+    `;
+
+    const sttResult = await window.GeminiAPI.transcribeAudioWithSarvam(scribeFile);
+
+    // Step 2: Generate medical summary with Gemini
+    resultsContainer.innerHTML = `
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Step 2/3: Generating comprehensive medical summary...</p>
+      </div>
+    `;
+
+    const medicalSummary = await window.GeminiAPI.generateMedicalSummary(
+      sttResult.transcript,
+      sttResult.language
+    );
+
+    // Step 3: Translate summary if language is different from source
+    let translatedSummary = null;
+    if (selectedLanguage !== 'en-IN' && sttResult.language_code !== selectedLanguage) {
+      resultsContainer.innerHTML = `
+        <div class="loading-container">
+          <div class="loading-spinner"></div>
+          <p class="loading-text">Step 3/3: Translating medical summary...</p>
+        </div>
+      `;
+
+      translatedSummary = await window.GeminiAPI.translateMedicalSummary(
+        medicalSummary,
+        selectedLanguage
+      );
+    }
+
+    // Display combined results
+    displayMedicalSummaryResults({
+      source_language: sttResult.language,
+      source_language_code: sttResult.language_code,
+      target_language_code: selectedLanguage,
+      transcript: sttResult.transcript,
+      medical_summary: medicalSummary,
+      translated_summary: translatedSummary
+    });
+
   } catch (error) {
-    console.error('Transcription error:', error);
+    console.error('Transcription/Summary error:', error);
     showError('scribe-results', `Error: ${error.message}`);
   } finally {
     transcribeBtn.disabled = false;
-    transcribeBtn.innerHTML = '<span>📝 Transcribe & Translate</span>';
+    transcribeBtn.innerHTML = '<span>✨ Transcribe & Summarize</span>';
   }
 }
 
-function displayScribeResults(data) {
+function displayMedicalSummaryResults(data) {
   const resultsContainer = document.getElementById('scribe-results');
 
-  const symptomsHtml = data.symptoms.map(symptom =>
-    `<li style="padding: 0.5rem; background: var(--bg-secondary); margin-bottom: 0.5rem; border-radius: 8px;">${symptom}</li>`
-  ).join('');
+  const languageNames = {
+    'en-IN': 'English',
+    'hi-IN': 'Hindi',
+    'bn-IN': 'Bengali',
+    'kn-IN': 'Kannada',
+    'ml-IN': 'Malayalam',
+    'mr-IN': 'Marathi',
+    'od-IN': 'Odia',
+    'pa-IN': 'Punjabi',
+    'ta-IN': 'Tamil',
+    'te-IN': 'Telugu',
+    'gu-IN': 'Gujarati'
+  };
+
+  const targetLanguageName = languageNames[data.target_language_code] || 'English';
+  const summary = data.translated_summary || data.medical_summary;
+
+  const languageBadge = data.translated_summary ? `
+    <div class="alert alert-info mb-3">
+      <span>🌐</span>
+      <span><strong>Detected:</strong> ${data.source_language} → <strong>Translated to:</strong> ${targetLanguageName}</span>
+    </div>
+  ` : `
+    <div class="alert alert-success mb-3">
+      <span>✓</span>
+      <span><strong>Detected Language:</strong> ${data.source_language}</span>
+    </div>
+  `;
 
   resultsContainer.innerHTML = `
+    ${languageBadge}
+    
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">Clinical Documentation</h3>
+        <h3 class="card-title">📋 Medical Summary for Doctor Handoff</h3>
+        <p class="card-subtitle">Professional clinical summary in ${targetLanguageName}</p>
       </div>
       
       <div class="results-grid">
         <div class="result-card">
-          <div class="result-label">Detected Language</div>
-          <div class="result-value">${data.detected_language}</div>
+          <div class="result-label">👤 Chief Complaint</div>
+          <div class="result-value">${summary.chief_complaint}</div>
         </div>
         
         <div class="result-card">
-          <div class="result-label">Chief Complaint</div>
-          <div class="result-value">${data.chief_complaint}</div>
-        </div>
-        
-        <div class="result-card">
-          <div class="result-label">Duration</div>
-          <div class="result-value">${data.duration}</div>
+          <div class="result-label">⏱️ Duration</div>
+          <div class="result-value">${summary.duration}</div>
         </div>
       </div>
       
       <div class="mt-3">
         <div class="result-card">
-          <div class="result-label">Symptoms</div>
-          <ul style="list-style: none; padding: 0; margin-top: 0.5rem;">
-            ${symptomsHtml}
-          </ul>
+          <div class="result-label">🩺 Symptoms</div>
+          <div class="result-value" style="white-space: pre-wrap; line-height: 1.8;">${summary.symptoms}</div>
         </div>
       </div>
       
-      ${data.medical_history ? `
+      ${summary.medical_history ? `
         <div class="mt-3">
           <div class="result-card">
-            <div class="result-label">Medical History</div>
-            <div class="result-value">${data.medical_history}</div>
+            <div class="result-label">📋 Medical History</div>
+            <div class="result-value" style="white-space: pre-wrap; line-height: 1.8;">${summary.medical_history}</div>
+          </div>
+        </div>
+      ` : ''}
+      
+      ${summary.physical_exam ? `
+        <div class="mt-3">
+          <div class="result-card">
+            <div class="result-label">🔍 Physical Examination</div>
+            <div class="result-value" style="white-space: pre-wrap; line-height: 1.8;">${summary.physical_exam}</div>
           </div>
         </div>
       ` : ''}
       
       <div class="mt-3">
-        <div class="result-card">
-          <div class="result-label">📋 Clinical Note (EHR-Ready)</div>
-          <div class="result-value" style="white-space: pre-wrap; line-height: 1.8;">${data.clinical_note}</div>
+        <div class="result-card" style="background: var(--gradient-ocean); padding: 1.5rem; border-radius: 12px;">
+          <div class="result-label" style="color: white; opacity: 0.9;">⚕️ Clinical Assessment</div>
+          <div class="result-value" style="color: white; font-size: 1.125rem; font-weight: 600; white-space: pre-wrap; line-height: 1.8;">${summary.assessment}</div>
         </div>
       </div>
       
       <div class="mt-3">
-        <details>
-          <summary style="cursor: pointer; color: var(--primary-teal); font-weight: 600; margin-bottom: 1rem;">
-            View Original Transcript
-          </summary>
-          <div class="result-card">
-            <div class="result-label">Original Language</div>
-            <div class="result-value" style="white-space: pre-wrap;">${data.transcript_original}</div>
-          </div>
-          <div class="result-card mt-2">
-            <div class="result-label">English Translation</div>
-            <div class="result-value" style="white-space: pre-wrap;">${data.transcript_english}</div>
-          </div>
-        </details>
+        <div class="result-card" style="background: var(--gradient-purple); padding: 1.5rem; border-radius: 12px;">
+          <div class="result-label" style="color: white; opacity: 0.9;">💊 Treatment Plan</div>
+          <div class="result-value" style="color: white; font-size: 1.125rem; font-weight: 600; white-space: pre-wrap; line-height: 1.8;">${summary.treatment_plan}</div>
+        </div>
       </div>
+      
+      <div class="mt-3">
+        <div class="result-card">
+          <div class="result-label">📅 Follow-up Instructions</div>
+          <div class="result-value" style="white-space: pre-wrap; line-height: 1.8;">${summary.follow_up}</div>
+        </div>
+      </div>
+      
+      ${summary.red_flags ? `
+        <div class="mt-3">
+          <div class="alert alert-warning">
+            <span>⚠️</span>
+            <div>
+              <strong>Warning Signs to Watch For:</strong>
+              <p style="margin-top: 0.5rem; white-space: pre-wrap;">${summary.red_flags}</p>
+            </div>
+          </div>
+        </div>
+      ` : ''}
+      
+      <details class="mt-3">
+        <summary style="cursor: pointer; color: var(--primary-teal); font-weight: 600; margin-bottom: 1rem;">
+          📝 View Original Transcription
+        </summary>
+        <div class="result-card">
+          <div class="result-label">Original Language (${data.source_language})</div>
+          <div class="result-value" style="white-space: pre-wrap; line-height: 1.8;">${data.transcript}</div>
+        </div>
+      </details>
       
       <details class="mt-3">
         <summary style="cursor: pointer; color: var(--primary-teal); font-weight: 600;">

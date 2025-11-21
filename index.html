@@ -136,9 +136,28 @@
             <audio id="scribe-audio-player" class="preview-audio" controls></audio>
           </div>
 
+          <div class="mt-3">
+            <label for="scribe-language-select" class="card-subtitle" style="display: block; margin-bottom: 0.5rem;">
+              🌐 Select Language for Medical Summary
+            </label>
+            <select id="scribe-language-select" class="language-select">
+              <option value="en-IN">English (Indian)</option>
+              <option value="hi-IN">हिन्दी (Hindi)</option>
+              <option value="bn-IN">বাংলা (Bengali)</option>
+              <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+              <option value="ml-IN">മലയാളം (Malayalam)</option>
+              <option value="mr-IN">मराठी (Marathi)</option>
+              <option value="od-IN">ଓଡ଼ିଆ (Odia)</option>
+              <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option>
+              <option value="ta-IN">தமிழ் (Tamil)</option>
+              <option value="te-IN">తెలుగు (Telugu)</option>
+              <option value="gu-IN">ગુજરાતી (Gujarati)</option>
+            </select>
+          </div>
+
           <div class="flex gap-2 mt-3">
             <button id="scribe-transcribe-btn" class="btn btn-primary" disabled>
-              <span>📝 Transcribe & Translate</span>
+              <span>✨ Transcribe & Summarize</span>
             </button>
             <button id="scribe-clear-btn" class="btn btn-secondary hidden">
               Clear
