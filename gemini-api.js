@@ -3,7 +3,7 @@
  * Handles all interactions with Google's Gemini API for multimodal processing
  */
 
-const GEMINI_API_KEY = 'AIzaSyAEDOHEBTWKO-Lm0oUgpArHYybwFI-fF-g';
+const GEMINI_API_KEY = 'YOUR_API_KEY_HERE';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 /**
@@ -48,10 +48,18 @@ function getMimeType(file) {
  * @param {File} file - Optional file (image or audio)
  * @param {string} modelName - Gemini model to use
  */
-async function callGeminiAPI(prompt, file = null, modelName = 'gemini-2.5-flash') {
-  try {
-    const url = `${GEMINI_API_BASE}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+const AVAILABLE_MODELS = [
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-001',
+  'gemini-1.5-pro',
+  'gemini-1.5-pro-latest'
+];
 
+async function callGeminiAPI(prompt, file = null, modelName = 'gemini-1.5-flash-latest') {
+  // Helper to try a specific model
+  const tryModel = async (model) => {
+    const url = `${GEMINI_API_BASE}/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
     let requestBody = {
       contents: [{
         parts: [
@@ -59,22 +67,11 @@ async function callGeminiAPI(prompt, file = null, modelName = 'gemini-2.5-flash'
         ]
       }],
       safetySettings: [
-        {
-          category: "HARM_CATEGORY_HARASSMENT",
-          threshold: "BLOCK_NONE"
-        },
-        {
-          category: "HARM_CATEGORY_HATE_SPEECH",
-          threshold: "BLOCK_NONE"
-        },
-        {
-          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-          threshold: "BLOCK_NONE"
-        },
-        {
-          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-          threshold: "BLOCK_NONE"
-        }
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" }
       ]
     };
 
@@ -82,7 +79,6 @@ async function callGeminiAPI(prompt, file = null, modelName = 'gemini-2.5-flash'
     if (file) {
       const base64Data = await fileToBase64(file);
       const mimeType = getMimeType(file);
-
       requestBody.contents[0].parts.push({
         inline_data: {
           mime_type: mimeType,
@@ -93,51 +89,62 @@ async function callGeminiAPI(prompt, file = null, modelName = 'gemini-2.5-flash'
 
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`API Error: ${errorData.error?.message || response.statusText}`);
+      throw new Error(errorData.error?.message || response.statusText);
     }
 
-    const data = await response.json();
+    return await response.json();
+  };
 
-    // Extract the text response
-    if (data.candidates && data.candidates.length > 0) {
-      const candidate = data.candidates[0];
+  // Main execution loop with fallback
+  let lastError = null;
+  const modelsToTry = [modelName, ...AVAILABLE_MODELS.filter(m => m !== modelName)];
 
-      // Check if content was blocked
-      if (candidate.finishReason && candidate.finishReason !== 'STOP') {
-        console.error('Content generation stopped:', candidate.finishReason);
-        console.error('Safety ratings:', candidate.safetyRatings);
-        throw new Error(`Content blocked: ${candidate.finishReason}. The AI may have safety concerns with the input.`);
+  // Remove duplicates
+  const uniqueModels = [...new Set(modelsToTry)];
+
+  for (const model of uniqueModels) {
+    try {
+      console.log(`Attempting Gemini API with model: ${model}`);
+      const data = await tryModel(model);
+
+      // Process successful response
+      if (data.candidates && data.candidates.length > 0) {
+        const candidate = data.candidates[0];
+        if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+          console.warn(`Model ${model} blocked content: ${candidate.finishReason}`);
+          // If blocked, trying another model might not help, but we continue just in case
+          throw new Error(`Content blocked: ${candidate.finishReason}`);
+        }
+
+        if (candidate.content?.parts?.[0]?.text) {
+          return candidate.content.parts[0].text;
+        }
       }
 
-      if (candidate.content && candidate.content.parts && candidate.content.parts[0]) {
-        const text = candidate.content.parts[0].text;
-        return text;
-      } else {
-        console.error('No text in response:', candidate);
-        throw new Error('No text content in API response');
-      }
-    } else {
-      console.error('Full API response:', data);
+      throw new Error('No text content in API response');
 
-      // Check for prompt feedback (safety issues)
-      if (data.promptFeedback && data.promptFeedback.blockReason) {
-        throw new Error(`Input blocked: ${data.promptFeedback.blockReason}. ${data.promptFeedback.safetyRatings ? 'Safety concern detected.' : ''}`);
+    } catch (error) {
+      console.warn(`Failed with model ${model}:`, error.message);
+      lastError = error;
+
+      // If it's a safety block, don't retry other models (they'll likely block it too)
+      if (error.message.includes('Content blocked')) {
+        throw error;
       }
 
-      throw new Error('No response generated from API. The model may not have generated content.');
+      // Continue to next model
     }
-  } catch (error) {
-    console.error('Gemini API Error:', error);
-    throw error;
   }
+
+  // If all models failed
+  console.error('All models failed. Last error:', lastError);
+  throw lastError || new Error('Failed to generate content with any available model');
 }
 
 /**
