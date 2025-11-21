@@ -178,8 +178,8 @@ function displayTraumaResults(data) {
     </div>
   ` : '';
 
-  // SOS Button appears when severity > 8
-  const sosButton = data.severity_score > 8 ? `
+  // SOS Button appears when severity >= 8
+  const sosButton = data.severity_score >= 8 ? `
     <div style="margin: 1.5rem 0; text-align: center;">
       <button id="sos-emergency-btn" class="sos-btn">
         <span class="sos-icon">🆘</span>
