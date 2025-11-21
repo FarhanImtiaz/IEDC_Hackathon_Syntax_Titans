@@ -1,5 +1,5 @@
 /**
- * Gram-Sahayak Platform - Main Application Logic
+ * Synapse Care Platform - Main Application Logic
  * Handles UI interactions, file uploads, and module switching
  */
 

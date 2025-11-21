@@ -1,6 +1,6 @@
-# Gram-Sahayak: Rural Healthcare AI Platform
+# Synapse Care: Rural Healthcare AI Platform
 
-![Gram-Sahayak](https://img.shields.io/badge/AI-Healthcare-blue)
+![Synapse Care](https://img.shields.io/badge/AI-Healthcare-blue)
 ![Status](https://img.shields.io/badge/Status-Active-success)
 
 A comprehensive AI-powered healthcare platform leveraging Google's Gemini multimodal capabilities to support rural healthcare workers in India. The platform consists of four independent modules designed to address critical healthcare challenges.

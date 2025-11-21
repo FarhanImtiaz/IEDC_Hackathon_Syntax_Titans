@@ -1,5 +1,5 @@
 /**
- * Gram-Sahayak Platform - Gemini API Integration
+ * Synapse Care Platform - Gemini API Integration
  * Handles all interactions with Google's Gemini API for multimodal processing
  */
 
