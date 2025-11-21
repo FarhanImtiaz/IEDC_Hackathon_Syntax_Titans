@@ -67,12 +67,12 @@ async function listModels() {
   }
 }
 
-async function callGeminiAPI(prompt, file = null, modelName = 'gemini-2.0-flash-lite') {
-  // Helper to try a specific model
-  const tryModel = async (model) => {
-    // Ensure model name doesn't have 'models/' prefix if already present
-    const cleanModelName = model.replace('models/', '');
+async function callGeminiAPI(prompt, file = null, modelName = 'gemini-2.0-flash') {
+  try {
+    // Ensure model name doesn't have 'models/' prefix
+    const cleanModelName = modelName.replace('models/', '');
     const url = `${GEMINI_API_BASE}/models/${cleanModelName}:generateContent?key=${GEMINI_API_KEY}`;
+
     let requestBody = {
       contents: [{
         parts: [
@@ -110,85 +110,35 @@ async function callGeminiAPI(prompt, file = null, modelName = 'gemini-2.0-flash-
       const errorData = await response.json();
       const errorMessage = errorData.error?.message || response.statusText;
 
-      // Check for rate limit error (429)
       if (response.status === 429) {
-        console.warn(`Rate limit hit for model ${model}. Waiting to retry...`);
         throw new Error(`RATE_LIMIT_EXCEEDED: ${errorMessage}`);
       }
 
       throw new Error(errorMessage);
     }
 
-    return await response.json();
-  };
+    const data = await response.json();
 
-  // Main execution loop with fallback
-  let lastError = null;
-  const modelsToTry = [modelName, ...AVAILABLE_MODELS.filter(m => m !== modelName)];
-  const uniqueModels = [...new Set(modelsToTry)];
+    // Extract the text response
+    if (data.candidates && data.candidates.length > 0) {
+      const candidate = data.candidates[0];
 
-  for (const model of uniqueModels) {
-    try {
-      console.log(`Attempting Gemini API with model: ${model}`);
-      const data = await tryModel(model);
-
-      // Process successful response
-      if (data.candidates && data.candidates.length > 0) {
-        const candidate = data.candidates[0];
-        if (candidate.finishReason && candidate.finishReason !== 'STOP') {
-          console.warn(`Model ${model} blocked content: ${candidate.finishReason}`);
-          // If blocked, trying another model might not help, but we continue just in case
-          throw new Error(`Content blocked: ${candidate.finishReason}`);
-        }
-
-        if (candidate.content?.parts?.[0]?.text) {
-          return candidate.content.parts[0].text;
-        }
+      if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+        console.warn(`Content blocked: ${candidate.finishReason}`);
+        throw new Error(`Content blocked: ${candidate.finishReason}`);
       }
 
-      throw new Error('No text content in API response');
-
-    } catch (error) {
-      console.warn(`Failed with model ${model}:`, error.message);
-
-      // Handle Rate Limits specifically
-      if (error.message.includes('RATE_LIMIT_EXCEEDED')) {
-        // Extract wait time if available, default to 30s
-        const waitTimeMatch = error.message.match(/retry in ([\d.]+)s/);
-        const waitTime = waitTimeMatch ? parseFloat(waitTimeMatch[1]) * 1000 : 30000;
-
-        console.log(`Waiting ${waitTime}ms before retrying...`);
-        // Show visual feedback if possible (optional)
-
-        // Wait and retry SAME model once
-        await new Promise(resolve => setTimeout(resolve, waitTime + 1000));
-        try {
-          console.log(`Retrying model ${model} after wait...`);
-          const retryData = await tryModel(model);
-          if (retryData.candidates?.[0]?.content?.parts?.[0]?.text) {
-            return retryData.candidates[0].content.parts[0].text;
-          }
-        } catch (retryError) {
-          console.error(`Retry failed for ${model}:`, retryError);
-          // Continue to next model if retry fails
-        }
+      if (candidate.content?.parts?.[0]?.text) {
+        return candidate.content.parts[0].text;
       }
-
-      lastError = error;
-
-      // If it's a safety block, don't retry other models (they'll likely block it too)
-      if (error.message.includes('Content blocked')) {
-        throw error;
-      }
-
-      // Continue to next model
     }
-  }
 
-  // If all models failed
-  console.error('All models failed. Last error:', lastError);
-  listModels(); // Log available models for debugging
-  throw lastError || new Error('Failed to generate content with any available model');
+    throw new Error('No text content in API response');
+
+  } catch (error) {
+    console.error('Gemini API Error:', error);
+    throw error;
+  }
 }
 
 /**
