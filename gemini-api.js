@@ -312,44 +312,45 @@ Example: "Take one red pill every morning after breakfast with water"`;
 }
 
 /**
- * Sarvam.ai Speech-to-Text with Auto Language Detection
+ * Transcribe audio using Gemini (supports any length, auto-detects language)
  * @param {File} audioFile - Audio file to transcribe
  * @returns {Object} { transcript, language_code, language }
  */
 async function transcribeAudioWithSarvam(audioFile) {
-  const SARVAM_API_KEY = 'sk_bwbz2lvp_fH1cCnOrHBJb4djNaIiclkDm';
-  const SARVAM_STT_URL = 'https://api.sarvam.ai/speech-to-text';
-
   try {
-    // Create FormData for multipart/form-data request
-    const formData = new FormData();
-    formData.append('file', audioFile);
-    formData.append('model', 'saarika:v2.5');
-    formData.append('language_code', 'unknown'); // Auto-detect language
+    // Use Gemini for transcription - it supports audio and auto-detects language
+    const prompt = `Transcribe this audio recording accurately. Detect the language being spoken.
+    
+Return ONLY a JSON object with this structure:
+{
+  "transcript": "<full transcription in original language>",
+  "language": "<detected language name>",
+  "language_code": "<ISO language code like en-IN, hi-IN, ta-IN, etc>"
+}
 
-    const response = await fetch(SARVAM_STT_URL, {
-      method: 'POST',
-      headers: {
-        'api-subscription-key': SARVAM_API_KEY
-      },
-      body: formData
-    });
+CRITICAL: Respond ONLY with valid JSON. No markdown, no explanation.`;
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Sarvam.ai STT Error: ${errorData.message || response.statusText}`);
+    const response = await callGeminiAPI(prompt, audioFile, 'gemini-2.5-flash');
+
+    // Parse JSON response
+    let jsonText = response.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/```\n?/g, '');
     }
 
-    const data = await response.json();
+    const data = JSON.parse(jsonText);
+    console.log('Gemini STT Response:', data);
 
     return {
       transcript: data.transcript || '',
-      language_code: data.language_code || 'unknown',
+      language_code: data.language_code || 'en-IN',
       language: data.language || 'Unknown'
     };
   } catch (error) {
-    console.error('Sarvam.ai STT Error:', error);
-    throw error;
+    console.error('Transcription error:', error);
+    throw new Error(`Transcription failed: ${error.message}`);
   }
 }
 
