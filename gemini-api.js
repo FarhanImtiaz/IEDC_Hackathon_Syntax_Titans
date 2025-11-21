@@ -110,7 +110,15 @@ async function callGeminiAPI(prompt, file = null, modelName = 'gemini-1.5-flash'
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error?.message || response.statusText);
+      const errorMessage = errorData.error?.message || response.statusText;
+
+      // Check for rate limit error (429)
+      if (response.status === 429) {
+        console.warn(`Rate limit hit for model ${model}. Waiting to retry...`);
+        throw new Error(`RATE_LIMIT_EXCEEDED: ${errorMessage}`);
+      }
+
+      throw new Error(errorMessage);
     }
 
     return await response.json();
@@ -119,8 +127,6 @@ async function callGeminiAPI(prompt, file = null, modelName = 'gemini-1.5-flash'
   // Main execution loop with fallback
   let lastError = null;
   const modelsToTry = [modelName, ...AVAILABLE_MODELS.filter(m => m !== modelName)];
-
-  // Remove duplicates
   const uniqueModels = [...new Set(modelsToTry)];
 
   for (const model of uniqueModels) {
@@ -146,6 +152,30 @@ async function callGeminiAPI(prompt, file = null, modelName = 'gemini-1.5-flash'
 
     } catch (error) {
       console.warn(`Failed with model ${model}:`, error.message);
+
+      // Handle Rate Limits specifically
+      if (error.message.includes('RATE_LIMIT_EXCEEDED')) {
+        // Extract wait time if available, default to 30s
+        const waitTimeMatch = error.message.match(/retry in ([\d.]+)s/);
+        const waitTime = waitTimeMatch ? parseFloat(waitTimeMatch[1]) * 1000 : 30000;
+
+        console.log(`Waiting ${waitTime}ms before retrying...`);
+        // Show visual feedback if possible (optional)
+
+        // Wait and retry SAME model once
+        await new Promise(resolve => setTimeout(resolve, waitTime + 1000));
+        try {
+          console.log(`Retrying model ${model} after wait...`);
+          const retryData = await tryModel(model);
+          if (retryData.candidates?.[0]?.content?.parts?.[0]?.text) {
+            return retryData.candidates[0].content.parts[0].text;
+          }
+        } catch (retryError) {
+          console.error(`Retry failed for ${model}:`, retryError);
+          // Continue to next model if retry fails
+        }
+      }
+
       lastError = error;
 
       // If it's a safety block, don't retry other models (they'll likely block it too)
