@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeNavigation();
   initializeTraumaTriage();
   initializePolyglotScribe();
-  initializeLensLaboratory();
+
   initializeRxVox();
 });
 
@@ -500,163 +500,9 @@ function clearScribe() {
   document.getElementById('scribe-clear-btn').classList.add('hidden');
 }
 
-// ==================== Module 3: Lens-Laboratory ====================
 
-let lensFile = null;
 
-function initializeLensLaboratory() {
-  setupFileUpload(
-    'lens-upload-zone',
-    'lens-file-input',
-    'lens-preview',
-    'lens-preview-image',
-    (file) => {
-      lensFile = file;
-      document.getElementById('lens-analyze-btn').disabled = false;
-      document.getElementById('lens-clear-btn').classList.remove('hidden');
-    }
-  );
 
-  document.getElementById('lens-analyze-btn').addEventListener('click', analyzeMedicalImage);
-  document.getElementById('lens-clear-btn').addEventListener('click', clearLens);
-}
-
-async function analyzeMedicalImage() {
-  if (!lensFile) return;
-
-  const analyzeBtn = document.getElementById('lens-analyze-btn');
-  analyzeBtn.disabled = true;
-  analyzeBtn.innerHTML = '<div class="loading-spinner"></div> <span>Analyzing...</span>';
-
-  showLoading('lens-results');
-
-  try {
-    const result = await window.GeminiAPI.analyzeMedicalImage(lensFile);
-    displayLensResults(result);
-  } catch (error) {
-    console.error('Medical image analysis error:', error);
-    showError('lens-results', `Error: ${error.message}`);
-  } finally {
-    analyzeBtn.disabled = false;
-    analyzeBtn.innerHTML = '<span>🔬 Analyze Image</span>';
-  }
-}
-
-function displayLensResults(data) {
-  const resultsContainer = document.getElementById('lens-results');
-
-  const findingsHtml = data.findings.map((finding, idx) => `
-    <div class="result-card">
-      <div class="result-label">Finding ${idx + 1}</div>
-      <p style="margin: 0.5rem 0;"><strong>Observation:</strong> ${finding.finding}</p>
-      <p style="margin: 0.5rem 0;"><strong>Location:</strong> ${finding.location}</p>
-      <p style="margin: 0.5rem 0;"><strong>Significance:</strong> ${finding.significance}</p>
-    </div>
-  `).join('');
-
-  const abnormalitiesHtml = data.abnormality_details && data.abnormality_details.length > 0 ? `
-    <div class="mt-3">
-      <div class="result-card">
-        <div class="result-label">🔍 Detected Abnormalities</div>
-        <ul style="margin: 0.5rem 0; padding-left: 1.5rem; color: var(--text-primary);">
-          ${data.abnormality_details.map(detail => `<li>${detail}</li>`).join('')}
-        </ul>
-      </div>
-    </div>
-  ` : '';
-
-  const diagnosisHtml = data.differential_diagnosis && data.differential_diagnosis.length > 0 ? `
-    <div class="result-card">
-      <div class="result-label">Differential Diagnosis</div>
-      <ul style="margin: 0.5rem 0; padding-left: 1.5rem; color: var(--text-primary);">
-        ${data.differential_diagnosis.map(dx => `<li>${dx}</li>`).join('')}
-      </ul>
-    </div>
-  ` : '';
-
-  const urgentAlert = data.urgent_consultation_needed ? `
-    <div class="alert alert-warning">
-      <span>⚠️</span>
-      <span><strong>Urgent specialist consultation recommended</strong></span>
-    </div>
-  ` : '';
-
-  resultsContainer.innerHTML = `
-    ${urgentAlert}
-    
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Diagnostic Analysis</h3>
-      </div>
-      
-      <div class="results-grid">
-        <div class="result-card">
-          <div class="result-label">Image Type</div>
-          <div class="result-value">${data.image_type}</div>
-        </div>
-        
-        <div class="result-card">
-          <div class="result-label">Body Part</div>
-          <div class="result-value">${data.body_part}</div>
-        </div>
-        
-        <div class="result-card">
-          <div class="result-label">Confidence Score</div>
-          <div class="result-value">
-            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-teal);">
-              ${data.confidence_score}%
-            </div>
-          </div>
-        </div>
-        
-        <div class="result-card">
-          <div class="result-label">Abnormalities</div>
-          <div class="result-value">
-            ${data.abnormalities_detected ? '⚠️ Detected' : '✅ None Detected'}
-          </div>
-        </div>
-      </div>
-      
-      <div class="mt-3">
-        <div class="card-title mb-2">Clinical Findings</div>
-        <div class="results-grid">
-          ${findingsHtml}
-        </div>
-      </div>
-      
-      ${abnormalitiesHtml}
-      
-      <div class="mt-3">
-        <div class="result-card">
-          <div class="result-label">📋 Recommendation for GP</div>
-          <div class="result-value" style="white-space: pre-wrap; line-height: 1.8;">${data.recommendation}</div>
-        </div>
-      </div>
-      
-      ${diagnosisHtml ? `<div class="mt-3">${diagnosisHtml}</div>` : ''}
-      
-      <details class="mt-3">
-        <summary style="cursor: pointer; color: var(--primary-teal); font-weight: 600;">
-          View Raw JSON Response
-        </summary>
-        <div class="json-display mt-2">
-          <pre>${JSON.stringify(data, null, 2)}</pre>
-        </div>
-      </details>
-    </div>
-  `;
-
-  resultsContainer.classList.remove('hidden');
-}
-
-function clearLens() {
-  lensFile = null;
-  document.getElementById('lens-file-input').value = '';
-  document.getElementById('lens-preview').classList.add('hidden');
-  document.getElementById('lens-results').classList.add('hidden');
-  document.getElementById('lens-analyze-btn').disabled = true;
-  document.getElementById('lens-clear-btn').classList.add('hidden');
-}
 
 // ==================== Module 4: Rx-Vox ====================
 

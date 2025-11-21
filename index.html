@@ -48,12 +48,6 @@
             </a>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link" data-module="lens-laboratory">
-              <span class="nav-icon">🔬</span>
-              <span class="nav-text">Lens-Laboratory</span>
-            </a>
-          </li>
-          <li class="nav-item">
             <a href="#" class="nav-link" data-module="rx-vox">
               <span class="nav-icon">💊</span>
               <span class="nav-text">Rx-Vox</span>
@@ -170,49 +164,7 @@
         </div>
       </section>
 
-      <!-- Module 3: Lens-Laboratory -->
-      <section id="lens-laboratory" class="module-container">
-        <div class="module-header">
-          <h2 class="module-title">🔬 Lens-Laboratory</h2>
-          <p class="module-description">
-            Diagnostic support for medical images. Upload X-rays, microscopy slides, or photos of skin lesions to
-            receive a second opinion with confidence scores.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Upload Medical Image</h3>
-            <p class="card-subtitle">X-rays, Microscopy Slides, Skin Lesions</p>
-          </div>
-
-          <div class="upload-zone" id="lens-upload-zone">
-            <div class="upload-icon">🔍</div>
-            <p class="upload-text">Click to upload or drag and drop</p>
-            <p class="upload-hint">Maximum file size: 10MB</p>
-            <input type="file" id="lens-file-input" class="file-input" accept="image/*">
-          </div>
-
-          <div id="lens-preview" class="preview-container hidden">
-            <img id="lens-preview-image" class="preview-image" alt="Medical image preview">
-          </div>
-
-          <div class="flex gap-2 mt-3">
-            <button id="lens-analyze-btn" class="btn btn-primary" disabled>
-              <span>🔬 Analyze Image</span>
-            </button>
-            <button id="lens-clear-btn" class="btn btn-secondary hidden">
-              Clear
-            </button>
-          </div>
-        </div>
-
-        <div id="lens-results" class="results-container hidden">
-          <!-- Results will be dynamically inserted here -->
-        </div>
-      </section>
-
-      <!-- Module 4: Rx-Vox -->
+      <!-- Module 3: Rx-Vox -->
       <section id="rx-vox" class="module-container">
         <div class="module-header">
           <h2 class="module-title">💊 Rx-Vox</h2>

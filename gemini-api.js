@@ -205,62 +205,6 @@ CRITICAL: Respond ONLY with valid JSON. No markdown, no explanation, just the JS
 }
 
 /**
- * Module 3: Lens-Laboratory
- * Analyzes medical images for diagnostic support
- */
-async function analyzeMedicalImage(imageFile) {
-  const prompt = `You are a diagnostic AI assistant analyzing a medical image (X-ray, microscopy slide, skin lesion, etc.).
-
-Provide a STRICT JSON response with the following structure:
-
-{
-  "image_type": "<X-ray|Microscopy|Dermatology|Other>",
-  "body_part": "<anatomical location>",
-  "findings": [
-    {
-      "finding": "<specific observation>",
-      "location": "<where in the image>",
-      "significance": "<clinical significance>"
-    }
-  ],
-  "abnormalities_detected": <true|false>,
-  "abnormality_details": [
-    "<detail 1>",
-    "<detail 2>"
-  ],
-  "confidence_score": <number 0-100>,
-  "recommendation": "<recommendation for general practitioner>",
-  "differential_diagnosis": [
-    "<possible diagnosis 1>",
-    "<possible diagnosis 2>"
-  ],
-  "urgent_consultation_needed": <true|false>
-}
-
-CRITICAL: Respond ONLY with valid JSON. No markdown, no explanation, just the JSON object.
-
-Be thorough but conservative in your assessment. This is a second opinion tool for rural GPs.`;
-
-  const response = await callGeminiAPI(prompt, imageFile);
-
-  try {
-    let jsonText = response.trim();
-    if (jsonText.startsWith('```json')) {
-      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-    } else if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/```\n?/g, '');
-    }
-
-    const result = JSON.parse(jsonText);
-    return result;
-  } catch (e) {
-    console.error('Failed to parse JSON:', e);
-    console.log('Raw response:', response);
-    throw new Error('Failed to parse diagnostic results');
-  }
-}
-
-/**
  * Module 4: Rx-Vox
  * OCR for prescriptions and text-to-speech conversion
  */
@@ -609,7 +553,6 @@ function base64ToBlob(base64, mimeType) {
 window.GeminiAPI = {
   analyzeTrauma,
   transcribeConsultation,
-  analyzeMedicalImage,
   readPrescription,
   translateToLanguage,
   textToSpeech,
