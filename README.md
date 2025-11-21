@@ -3,7 +3,7 @@
 ![Synapse Care](https://img.shields.io/badge/AI-Healthcare-blue)
 ![Status](https://img.shields.io/badge/Status-Active-success)
 
-A comprehensive AI-powered healthcare platform leveraging Google's Gemini multimodal capabilities to support rural healthcare workers in India. The platform consists of four independent modules designed to address critical healthcare challenges.
+A comprehensive AI-powered healthcare platform leveraging Google's Gemini multimodal capabilities to support rural healthcare workers in India. The platform consists of three independent modules designed to address critical healthcare challenges.
 
 ## 🌟 Features
 
@@ -13,20 +13,19 @@ A comprehensive AI-powered healthcare platform leveraging Google's Gemini multim
 - **Output**: Severity score (1-10), immediate action steps, emergency flag
 - **Use Case**: Golden hour decision support for accidents, burns, bites
 
-### 2. 🎤 Polyglot Scribe (The Ears)
-- **Purpose**: Overcome language barriers and documentation fatigue
+### 2. 🎙️ Polyglot Scribe (The Medical Scribe)
+- **Purpose**: Overcome language barriers and generate comprehensive medical summaries
 - **Input**: Audio recording of doctor-patient consultation
-- **Output**: Structured clinical notes with translation
-- **Supported Languages**: Hindi, Bhojpuri, Marathi, Telugu, Tamil, and more
-- **Use Case**: Automatic medical documentation from multilingual consultations
+- **Output**: Auto-detected language, detailed medical summary, optional translation
+- **Key Features**: 
+  - Automatic language detection for rural Indian languages
+  - AI-generated structured medical summary (chief complaint, symptoms, assessment, treatment plan)
+  - Translation to user-selected language for doctor-to-doctor handoff
+  - Preserves original transcription alongside translated summary
+- **Supported Languages**: Hindi, Tamil, Telugu, Malayalam, Kannada, Bengali, Gujarati, Marathi, Punjabi, Odia, and English
+- **Use Case**: Automatic medical documentation from multilingual consultations with professional clinical summaries
 
-### 3. 🔬 Lens-Laboratory (The Eyes)
-- **Purpose**: Diagnostic support for medical imaging
-- **Input**: Photos of X-rays, microscopy slides, skin lesions
-- **Output**: Diagnostic findings with confidence scores
-- **Use Case**: Second opinion for rural GPs lacking specialists
-
-### 4. 💊 Rx-Vox (The Voice)
+### 3. 💊 Rx-Vox (The Voice)
 - **Purpose**: Patient literacy and medication compliance
 - **Input**: Photo of handwritten prescription
 - **Output**: Spoken audio instructions in patient's native language
@@ -117,30 +116,26 @@ IEDC_Hack/
 ### Module 2: Polyglot Scribe
 
 1. Click **"Polyglot Scribe"** in the sidebar
-2. Upload an audio file of the consultation
-3. Supported formats: MP3, WAV, AAC, OGG, FLAC, M4A
-4. Click **"Transcribe & Translate"**
-5. Review the results:
-   - Detected Language
-   - Chief Complaint
-   - Symptoms List
-   - Clinical Note (EHR-ready)
-   - Full Transcripts (original + English)
+2. Upload an audio file of the doctor-patient consultation
+3. Supported formats: MP3, WAV, AAC, OGG, FLAC, M4A, AMR
+4. Select target language for the medical summary (if translation needed)
+5. Click **"✨ Transcribe & Summarize"**
+6. Review the comprehensive results:
+   - **Detected Language** with visual badge
+   - **Medical Summary** in structured format:
+     - Chief Complaint & Duration
+     - Detailed Symptoms
+     - Medical History
+     - Physical Examination Findings
+     - Clinical Assessment
+     - Treatment Plan
+     - Follow-up Instructions
+     - Red Flags / Warning Signs
+   - **Original Transcription** (collapsible section)
+   - **Translation Status** (if applicable)
+   - Full medical summary in JSON format (for EHR integration)
 
-### Module 3: Lens-Laboratory
-
-1. Click **"Lens-Laboratory"** in the sidebar
-2. Upload a medical image (X-ray, microscopy slide, or skin lesion)
-3. Click **"Analyze Image"**
-4. Review the results:
-   - Image Type & Body Part
-   - Clinical Findings
-   - Abnormalities Detected
-   - Confidence Score
-   - GP Recommendations
-   - Differential Diagnosis
-
-### Module 4: Rx-Vox
+### Module 3: Rx-Vox
 
 1. Click **"Rx-Vox"** in the sidebar
 2. Upload an image of a handwritten prescription
