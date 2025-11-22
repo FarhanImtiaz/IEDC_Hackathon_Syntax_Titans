@@ -3,7 +3,7 @@
  * Handles all interactions with Google's Gemini API for multimodal processing
  */
 
-const GEMINI_API_KEY = 'YOUR_API_KEY_HERE';
+const GEMINI_API_KEY = 'AIzaSyAYCaOLTfa0kbstXocOqodcE8acaW10rZg';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 /**
