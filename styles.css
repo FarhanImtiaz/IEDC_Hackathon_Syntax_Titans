@@ -1,3 +1,8 @@
+.mainphoto-img {
+    border-radius: 24px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    object-fit: cover;
+}
 /* ==================================================================================
    GRAM-SAHAYAK PREMIUM UI/UX DESIGN SYSTEM
    Inspired by: Linear.app | Apple HIG | High-end Fintech Dashboards
@@ -655,6 +660,7 @@ body::before {
     position: relative;
     overflow: hidden;
     letter-spacing: -0.01em;
+    text-decoration: none;
 }
 
 .btn::after {
@@ -1241,9 +1247,89 @@ body::before {
 .brand-sub{ font-size:0.75rem; color:var(--text-tertiary) }
 .landing-menu{ display:flex; gap:1.25rem; align-items:center }
 .landing-menu a{ color:var(--text-secondary); text-decoration:none; font-weight:600 }
+.landing-menu a {
+    transition: color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+    border-radius: 8px;
+    padding: 0.4rem 0.9rem;
+}
+.landing-menu a:hover, .landing-menu a:focus {
+    color: var(--text-primary);
+    background: rgba(0,242,254,0.08);
+    box-shadow: 0 2px 12px rgba(0,242,254,0.10);
+    transform: translateY(-2px) scale(1.04);
+}
 .landing-actions{ display:flex; gap:0.75rem; align-items:center }
 .signin-link{ color:var(--text-secondary); text-decoration:none; padding:0.5rem 0.75rem; border-radius:8px }
 .get-started{ padding:0.5rem 0.9rem; border-radius:12px; background:var(--gradient-teal); color:#05222a; font-weight:700; text-decoration:none }
+
+/* Hover effects for top-right actions */
+.get-started{
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+.get-started:hover{
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 30px rgba(0,242,254,0.12), 0 4px 12px rgba(4,20,30,0.2);
+    filter: saturate(1.05);
+}
+.signin-link{
+    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+.signin-link:hover{
+    background: rgba(255,255,255,0.02);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    padding-left:0.8rem; padding-right:0.8rem;
+
+.btn:hover, .btn:focus {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 8px 30px rgba(0,242,254,0.13), 0 4px 12px rgba(4,20,30,0.13);
+    filter: saturate(1.08);
+    outline: none;
+}
+.btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 8px rgba(0,242,254,0.10);
+}
+}
+
+/* Improved, consistent button animations for all buttons */
+.btn {
+    will-change: transform, box-shadow, opacity;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px rgba(2,6,23,0.25);
+}
+
+.btn:active {
+    transform: translateY(-1px) scale(0.995);
+    box-shadow: 0 6px 14px rgba(2,6,23,0.15);
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(102,126,234,0.12);
+    transform: translateY(-3px);
+}
+
+/* Variant-specific microinteractions */
+.btn-primary:hover {
+    filter: brightness(1.05) saturate(1.05);
+}
+
+.btn-secondary:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--border-hover);
+}
+
+/* Small subtle focus for links styled as buttons */
+.signin-link:focus-visible, .get-started:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(0,242,254,0.12);
+}
+
 
 .landing-hero{ padding:4rem 2rem; max-width:1200px; margin:0 auto }
 .hero-inner{ display:grid; grid-template-columns: 1fr 420px; gap:3rem; align-items:center }
@@ -1259,6 +1345,7 @@ body::before {
 .phone-title{ font-weight:700 }
 .phone-body{ margin-top:1.4rem; display:flex; flex-direction:column; align-items:center; gap:1.25rem }
 .food-preview{ width:200px; height:220px; border-radius:12px; background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; font-size:3rem }
+.food-preview-img{ width:100%; height:100%; object-fit:cover; border-radius:12px; display:block }
 .health-score{ margin-top:0.5rem; padding:0.8rem 1rem; background:linear-gradient(90deg,#0ee7c0,#00f2fe); border-radius:14px; color:#002a24; font-weight:800 }
 
 .landing-footer{ margin-top:4rem; text-align:center; color:var(--text-tertiary); padding:2rem 0 }
@@ -1288,4 +1375,28 @@ body::before {
 @media (max-width:900px){
     .features-grid{ grid-template-columns: 1fr; }
     .section-title{ font-size:1.5rem }
+}
+
+/* Ensure anchor links scroll content into view below the sticky header */
+.landing-hero,
+.features-section,
+.contact-section {
+    /* approximate header height; adjust if your header size changes */
+    scroll-margin-top: 96px;
+}
+
+/* ==================== Contact Section ==================== */
+.contact-section{ padding:3.5rem 2rem; background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent); }
+.contact-inner{ max-width:1200px; margin:0 auto }
+.contact-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:1.25rem; margin-top:1rem }
+.contact-info{ background:var(--color-bg-elevated); padding:1.25rem; border-radius:12px; border:var(--border-width) solid var(--border-color) }
+.contact-info h3{ margin-bottom:0.5rem }
+.contact-social a{ color:var(--text-secondary); text-decoration:none; margin-right:0.5rem }
+.contact-form{ background:var(--glass-bg); padding:1.25rem; border-radius:12px; border:var(--border-width) solid var(--glass-border); display:flex; flex-direction:column; gap:0.75rem }
+.contact-form label{ font-weight:600; font-size:0.9rem }
+.contact-form input, .contact-form textarea{ padding:0.7rem 0.9rem; border-radius:8px; border:var(--border-width) solid var(--border-color); background:var(--color-bg-surface); color:var(--text-primary); font-size:0.95rem }
+.form-actions{ display:flex; gap:0.75rem; margin-top:0.5rem }
+
+@media (max-width:900px){
+    .contact-grid{ grid-template-columns: 1fr; }
 }
