@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Synapse Care - AI-powered healthcare platform for rural India with trauma triage, medical scribe, diagnostic support, and prescription reader">
+  <title>Synapse Care | Rural Healthcare AI Platform</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" type="image/jpeg" href="app_logo.jpeg">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon"><img src="app_logo.jpeg" alt="" class="app-img"></div>
+          <div class="logo-text">
+            <h1>Synapse Care</h1>
+            <p class="logo-tagline">Rural Healthcare AI</p>
+          </div>
+        </div>
+      </div>
+
+      <nav>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="#" class="nav-link active" data-module="trauma-triage">
+              <span class="nav-icon">🚑</span>
+              <span class="nav-text">ET-AI Trauma Triage</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" data-module="polyglot-scribe">
+              <span class="nav-icon">🎤</span>
+              <span class="nav-text">Polyglot Scribe</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" data-module="rx-vox">
+              <span class="nav-icon">💊</span>
+              <span class="nav-text">Rx-Vox</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+      <!-- Module 1: ET-AI Trauma Triage -->
+      <section id="trauma-triage" class="module-container active">
+        <div class="module-header">
+          <h2 class="module-title"><span class="title-icon">🚑</span> ET-AI Trauma Triage</h2>
+          <p class="module-description">
+            Immediate emergency assessment for trauma cases. Upload a photo of a physical injury to receive instant
+            first-aid guidance with severity scoring and action steps.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Upload Injury Image</h3>
+            <p class="card-subtitle">Supports JPG, PNG, WEBP formats</p>
+          </div>
+
+          <div class="upload-zone" id="trauma-upload-zone">
+            <div class="upload-icon">📸</div>
+            <p class="upload-text">Click to upload or drag and drop</p>
+            <p class="upload-hint">Maximum file size: 10MB</p>
+            <input type="file" id="trauma-file-input" class="file-input" accept="image/*">
+          </div>
+
+          <div id="trauma-preview" class="preview-container hidden">
+            <img id="trauma-preview-image" class="preview-image" alt="Injury preview">
+          </div>
+
+          <div class="flex gap-2 mt-3">
+            <button id="trauma-analyze-btn" class="btn btn-primary" disabled>
+              <span>🔍 Analyze Trauma</span>
+            </button>
+            <button id="trauma-clear-btn" class="btn btn-secondary hidden">
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div id="trauma-results" class="results-container hidden">
+          <!-- Results will be dynamically inserted here -->
+        </div>
+      </section>
+
+      <!-- Module 2: Polyglot Scribe -->
+      <section id="polyglot-scribe" class="module-container">
+        <div class="module-header">
+          <h2 class="module-title"><span class="title-icon">🎤</span> Polyglot Scribe</h2>
+          <p class="module-description">
+            Transcribe and translate medical consultations from local dialects to structured clinical notes. Supports
+            Bhojpuri, Marathi, Telugu, Hindi, and more.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Upload Audio Recording</h3>
+            <p class="card-subtitle">Supports MP3, WAV, AAC, OGG, FLAC, M4A formats</p>
+          </div>
+
+          <div class="upload-zone" id="scribe-upload-zone">
+            <div class="upload-icon">🎙️</div>
+            <p class="upload-text">Click to upload or drag and drop</p>
+            <p class="upload-hint">Maximum file size: 20MB</p>
+            <input type="file" id="scribe-file-input" class="file-input" accept="audio/*">
+          </div>
+
+          <div id="scribe-preview" class="preview-container hidden">
+            <p><strong>File:</strong> <span id="scribe-filename"></span></p>
+            <audio id="scribe-audio-player" class="preview-audio" controls></audio>
+          </div>
+
+          <div class="mt-3">
+            <label for="scribe-language-select" class="card-subtitle" style="display: block; margin-bottom: 0.5rem;">
+              🌐 Select Language for Medical Summary
+            </label>
+            <select id="scribe-language-select" class="language-select">
+              <option value="en-IN">English (Indian)</option>
+              <option value="hi-IN">हिन्दी (Hindi)</option>
+              <option value="bn-IN">বাংলা (Bengali)</option>
+              <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+              <option value="ml-IN">മലയാളം (Malayalam)</option>
+              <option value="mr-IN">मराठी (Marathi)</option>
+              <option value="od-IN">ଓଡ଼ିଆ (Odia)</option>
+              <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option>
+              <option value="ta-IN">தமிழ் (Tamil)</option>
+              <option value="te-IN">తెలుగు (Telugu)</option>
+              <option value="gu-IN">ગુજરાતી (Gujarati)</option>
+            </select>
+          </div>
+
+          <div class="flex gap-2 mt-3">
+            <button id="scribe-transcribe-btn" class="btn btn-primary" disabled>
+              <span>✨ Transcribe & Summarize</span>
+            </button>
+            <button id="scribe-clear-btn" class="btn btn-secondary hidden">
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div id="scribe-results" class="results-container hidden">
+          <!-- Results will be dynamically inserted here -->
+        </div>
+      </section>
+
+      <!-- Module 3: Rx-Vox -->
+      <section id="rx-vox" class="module-container">
+        <div class="module-header">
+          <h2 class="module-title"><span class="title-icon">💊</span> Rx-Vox</h2>
+          <p class="module-description">
+            Read handwritten prescriptions and convert to spoken instructions. Upload a prescription image to extract
+            medications and generate audio guidance.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Upload Prescription Image</h3>
+            <p class="card-subtitle">Handwritten or printed prescriptions</p>
+          </div>
+
+          <div class="upload-zone" id="rx-upload-zone">
+            <div class="upload-icon">📄</div>
+            <p class="upload-text">Click to upload or drag and drop</p>
+            <p class="upload-hint">Maximum file size: 10MB</p>
+            <input type="file" id="rx-file-input" class="file-input" accept="image/*">
+          </div>
+
+          <div id="rx-preview" class="preview-container hidden">
+            <img id="rx-preview-image" class="preview-image" alt="Prescription preview">
+          </div>
+
+          <div class="mt-3">
+            <label for="rx-language-select" class="card-subtitle" style="display: block; margin-bottom: 0.5rem;">
+              🗣️ Select Audio Language for Patient Instructions
+            </label>
+            <select id="rx-language-select" class="language-select">
+              <option value="en-IN">English (Indian)</option>
+              <option value="hi-IN">हिन्दी (Hindi)</option>
+              <option value="bn-IN">বাংলা (Bengali)</option>
+              <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+              <option value="ml-IN">മലയാളം (Malayalam)</option>
+              <option value="mr-IN">मराठी (Marathi)</option>
+              <option value="od-IN">ଓଡ଼ିଆ (Odia)</option>
+              <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option>
+              <option value="ta-IN">தமிழ் (Tamil)</option>
+              <option value="te-IN">తెలుగు (Telugu)</option>
+              <option value="gu-IN">ગુજરાતી (Gujarati)</option>
+            </select>
+          </div>
+
+          <div class="flex gap-2 mt-3">
+            <button id="rx-read-btn" class="btn btn-primary" disabled>
+              <span>📖 Read Prescription</span>
+            </button>
+            <button id="rx-clear-btn" class="btn btn-secondary hidden">
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div id="rx-results" class="results-container hidden">
+          <!-- Results will be dynamically inserted here -->
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="gemini-api.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
