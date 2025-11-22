@@ -500,10 +500,14 @@ Respond ONLY with the translated text in ${targetLangName}. No explanation, no e
  * @param {string} language - Language code (e.g., 'en-IN', 'hi-IN')
  */
 async function textToSpeech(text, language = 'en-IN') {
-  const SARVAM_API_KEY = 'sk_bwbz2lvp_fH1cCnOrHBJb4djNaIiclkDm';
+  const SARVAM_API_KEY = typeof API_CONFIG !== 'undefined' ? API_CONFIG.SARVAM_API_KEY : 'sk_bwbz2lvp_fH1cCnOrHBJb4djNaIiclkDm';
   const SARVAM_API_URL = 'https://api.sarvam.ai/text-to-speech';
 
-  // Map language codes to Sarvam.ai language codes (some use different format)
+  console.log('🔊 Starting TTS with Sarvam.AI...');
+  console.log('Language:', language);
+  console.log('Total text length:', text.length);
+
+  // Map language codes
   const languageMap = {
     'en-IN': 'en-IN',
     'hi-IN': 'hi-IN',
@@ -511,7 +515,7 @@ async function textToSpeech(text, language = 'en-IN') {
     'kn-IN': 'kn-IN',
     'ml-IN': 'ml-IN',
     'mr-IN': 'mr-IN',
-    'od-IN': 'od-IN', // Odia
+    'od-IN': 'od-IN',
     'pa-IN': 'pa-IN',
     'ta-IN': 'ta-IN',
     'te-IN': 'te-IN',
@@ -520,58 +524,156 @@ async function textToSpeech(text, language = 'en-IN') {
 
   const targetLanguage = languageMap[language] || 'en-IN';
 
-  try {
+  // Helper function to call API for a single chunk
+  const callSarvamAPI = async (chunkText) => {
+    const requestBody = {
+      inputs: [chunkText],
+      target_language_code: targetLanguage,
+      speaker: 'anushka',
+      pitch: 0,
+      pace: 1.0,
+      loudness: 1.5,
+      speech_sample_rate: 8000,
+      enable_preprocessing: true,
+      model: 'bulbul:v2'
+    };
+
     const response = await fetch(SARVAM_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'api-subscription-key': SARVAM_API_KEY
       },
-      body: JSON.stringify({
-        inputs: [text],
-        target_language_code: targetLanguage,
-        speaker: 'anushka', // Using female voice
-        pitch: 0,
-        pace: 1.0,
-        loudness: 1.0,
-        speech_sample_rate: 8000,
-        enable_preprocessing: true,
-        model: 'bulbul:v2'
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Sarvam.ai API Error: ${errorData.message || response.statusText}`);
+      console.error('Sarvam.AI Error Response:', errorData);
+      throw new Error(`Sarvam.ai API Error (${response.status}): ${JSON.stringify(errorData)}`);
     }
 
     const data = await response.json();
-
-    // Sarvam.ai returns base64 encoded audio in the 'audios' array
     if (data.audios && data.audios.length > 0) {
-      const base64Audio = data.audios[0];
+      return data.audios[0];
+    }
+    throw new Error('No audio generated');
+  };
 
-      // Convert base64 to audio blob and play
+  // Helper function to split text into chunks intelligently
+  const splitTextIntoChunks = (fullText) => {
+    const HARD_LIMIT = 250; // Reduced to 250 for absolute safety with Sarvam
+    const totalLength = fullText.length;
+
+    // 1. Plan the strategy
+    const minChunks = Math.ceil(totalLength / HARD_LIMIT);
+    const targetChunks = totalLength > 500 ? minChunks + 1 : minChunks;
+    const targetChunkSize = Math.ceil(totalLength / targetChunks);
+
+    console.log('📊 Audio Chunking Plan (Strict Mode):');
+    console.log(`- Total Length: ${totalLength} chars`);
+    console.log(`- Target Sections: ${targetChunks}`);
+    console.log(`- Target Size: ~${targetChunkSize} chars`);
+    console.log(`- Hard Limit: ${HARD_LIMIT} chars`);
+
+    const chunks = [];
+    let currentChunk = '';
+
+    // Split by sentences first
+    const sentences = fullText.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [fullText];
+
+    for (const sentence of sentences) {
+      if ((currentChunk + sentence).length > HARD_LIMIT) {
+        if (currentChunk) {
+          chunks.push(currentChunk.trim());
+          currentChunk = '';
+        }
+
+        if (sentence.length > HARD_LIMIT) {
+          // Split huge sentences by clauses
+          const clauses = sentence.match(/[^,;]+[,;]+(\s+|$)|[^,;]+$/g) || [sentence];
+          for (const clause of clauses) {
+            if ((currentChunk + clause).length > HARD_LIMIT) {
+              if (currentChunk) chunks.push(currentChunk.trim());
+              currentChunk = clause;
+
+              // Fallback: Split by words
+              if (currentChunk.length > HARD_LIMIT) {
+                const words = currentChunk.split(' ');
+                currentChunk = '';
+                for (const word of words) {
+                  if ((currentChunk + ' ' + word).length <= HARD_LIMIT) {
+                    currentChunk += (currentChunk ? ' ' : '') + word;
+                  } else {
+                    chunks.push(currentChunk.trim());
+                    currentChunk = word;
+                  }
+                }
+              }
+            } else {
+              currentChunk += clause;
+            }
+          }
+        } else {
+          currentChunk = sentence;
+        }
+      }
+      else if (currentChunk.length >= targetChunkSize && (currentChunk + sentence).length <= HARD_LIMIT) {
+        chunks.push(currentChunk.trim());
+        currentChunk = sentence;
+      }
+      else {
+        currentChunk += sentence;
+      }
+    }
+    if (currentChunk && currentChunk.trim().length > 0) {
+      chunks.push(currentChunk.trim());
+    }
+
+    // Verification
+    console.log('✅ Chunking Complete:');
+    chunks.forEach((c, i) => console.log(`  • Section ${i + 1}: ${c.length} chars`));
+
+    return chunks;
+  };
+
+  try {
+    // Split text
+    const chunks = splitTextIntoChunks(text);
+    console.log(`Processing ${chunks.length} audio sections...`);
+
+    // Process chunks sequentially with delays
+    for (let i = 0; i < chunks.length; i++) {
+      console.log(`▶️ Playing Section ${i + 1}/${chunks.length}...`);
+
+      const base64Audio = await callSarvamAPI(chunks[i]);
       const audioBlob = base64ToBlob(base64Audio, 'audio/wav');
       const audioUrl = URL.createObjectURL(audioBlob);
 
-      return new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
         const audio = new Audio(audioUrl);
+
+        // Add small delay after playback finishes to prevent overlap/cutoff
         audio.onended = () => {
+          console.log(`✅ Section ${i + 1} finished`);
           URL.revokeObjectURL(audioUrl);
-          resolve();
+          setTimeout(resolve, 500); // 500ms delay between chunks
         };
-        audio.onerror = (error) => {
+
+        audio.onerror = (e) => {
+          console.error(`❌ Section ${i + 1} failed`, e);
           URL.revokeObjectURL(audioUrl);
-          reject(error);
+          reject(e);
         };
-        audio.play();
+
+        audio.play().catch(reject);
       });
-    } else {
-      throw new Error('No audio generated from Sarvam.ai API');
     }
+
+    console.log('🎉 All audio sections completed!');
+
   } catch (error) {
-    console.error('Sarvam.ai TTS Error:', error);
+    console.error('❌ Sarvam.ai TTS Error:', error);
     throw error;
   }
 }

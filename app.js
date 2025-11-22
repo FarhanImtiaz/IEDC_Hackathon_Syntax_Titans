@@ -126,6 +126,7 @@ function showError(containerId, message) {
 // ==================== Module 1: ET-AI Trauma Triage ====================
 
 let traumaFile = null;
+let traumaTranslatedText = null; // Store translated text for audio playback
 
 function initializeTraumaTriage() {
   setupFileUpload(
@@ -148,14 +149,35 @@ async function analyzeTraumaImage() {
   if (!traumaFile) return;
 
   const analyzeBtn = document.getElementById('trauma-analyze-btn');
+  const languageSelect = document.getElementById('trauma-language-select');
+  const selectedLanguage = languageSelect.value;
+
   analyzeBtn.disabled = true;
   analyzeBtn.innerHTML = '<div class="loading-spinner"></div> <span>Analyzing...</span>';
 
   showLoading('trauma-results');
 
   try {
+    // Step 1: Analyze trauma with Gemini (original logic)
     const result = await window.GeminiAPI.analyzeTrauma(traumaFile);
-    displayTraumaResults(result);
+
+    // Step 2: If language is not English, translate the assessment
+    let translatedText = null;
+    if (selectedLanguage !== 'en-IN') {
+      const resultsContainer = document.getElementById('trauma-results');
+      resultsContainer.innerHTML = `
+        <div class="loading-container">
+          <div class="loading-spinner"></div>
+          <p class="loading-text">Translating assessment to selected language...</p>
+        </div>
+      `;
+
+      translatedText = await window.GeminiAPI.translateTraumaAssessment(result, selectedLanguage);
+      traumaTranslatedText = translatedText; // Store for audio playback
+    }
+
+    // Display results with translation
+    displayTraumaResults(result, selectedLanguage, translatedText);
   } catch (error) {
     console.error('Trauma analysis error:', error);
     showError('trauma-results', `Error: ${error.message}`);
@@ -165,7 +187,7 @@ async function analyzeTraumaImage() {
   }
 }
 
-function displayTraumaResults(data) {
+function displayTraumaResults(data, selectedLanguage = 'en-IN', translatedText = null) {
   const resultsContainer = document.getElementById('trauma-results');
 
   let severityClass = 'severity-low';
@@ -178,7 +200,7 @@ function displayTraumaResults(data) {
   // Unified Emergency Button (replaces static alert)
   // Shows if severity >= 8 OR if API explicitly says call_emergency
   const showEmergencyBtn = data.severity_score >= 8 || data.call_emergency;
-  
+
   const emergencySection = showEmergencyBtn ? `
     <div style="margin: 1.5rem 0; text-align: center;">
       <button id="sos-emergency-btn" class="sos-btn" onclick="handleSOSEmergency()">
@@ -199,6 +221,36 @@ function displayTraumaResults(data) {
       <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-primary);">
         ${data.warning_signs.map(sign => `<li>${sign}</li>`).join('')}
       </ul>
+    </div>
+  ` : '';
+
+  // Language name mapping
+  const languageNames = {
+    'en-IN': 'English',
+    'hi-IN': 'Hindi',
+    'bn-IN': 'Bengali',
+    'kn-IN': 'Kannada',
+    'ml-IN': 'Malayalam',
+    'mr-IN': 'Marathi',
+    'od-IN': 'Odia',
+    'pa-IN': 'Punjabi',
+    'ta-IN': 'Tamil',
+    'te-IN': 'Telugu',
+    'gu-IN': 'Gujarati'
+  };
+
+  // Multilingual transcript section
+  const multilingualSection = translatedText ? `
+    <div class="mt-3">
+      <div class="result-card" style="background: var(--gradient-primary); padding: 1.5rem; border-radius: 12px;">
+        <div class="result-label" style="color: white; opacity: 0.9;">🌐 Assessment in ${languageNames[selectedLanguage]}</div>
+        <div class="result-value" style="color: white; font-size: 1.125rem; font-weight: 600; white-space: pre-wrap; line-height: 1.8; margin-top: 0.75rem;">
+          ${translatedText}
+        </div>
+        <button class="btn btn-primary mt-2" onclick="playTraumaAudio('${selectedLanguage}', event)" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; border: none; font-weight: 600; padding: 0.75rem 1.5rem; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);">
+          🔊 Play Audio Instructions
+        </button>
+      </div>
     </div>
   ` : '';
 
@@ -242,6 +294,8 @@ function displayTraumaResults(data) {
       
       ${warningSignsHtml}
       
+      ${multilingualSection}
+      
       <details class="mt-3">
         <summary style="cursor: pointer; color: var(--primary-teal); font-weight: 600;">
           View Raw JSON Response
@@ -267,6 +321,7 @@ function displayTraumaResults(data) {
 
 function clearTrauma() {
   traumaFile = null;
+  traumaTranslatedText = null; // Clear translated text
   document.getElementById('trauma-file-input').value = '';
   document.getElementById('trauma-preview').classList.add('hidden');
   document.getElementById('trauma-results').classList.add('hidden');
@@ -338,6 +393,60 @@ function handleSOSEmergency() {
     }
   });
 }
+
+// Global function for robust audio playback (handles long text & errors)
+window.playGlobalAudio = async function (textToPlay, selectedLanguage, event) {
+  const button = event.target;
+
+  console.log('🎯 Global Play button clicked!');
+  console.log('Selected language:', selectedLanguage);
+
+  if (!textToPlay) {
+    alert('No text available for audio playback.');
+    return;
+  }
+
+  console.log('Text length:', textToPlay.length);
+
+  // Save original button text and style
+  const originalButtonText = button.innerHTML;
+  const originalDisabled = button.disabled;
+
+  button.disabled = true;
+  button.innerHTML = '<div class="loading-spinner"></div> <span>Generating Audio...</span>';
+
+  try {
+    console.log('📞 Calling Sarvam.AI TTS...');
+
+    // Play audio using Sarvam.AI TTS (handles chunking internally)
+    await window.GeminiAPI.textToSpeech(textToPlay, selectedLanguage);
+
+    console.log('✅ Audio playback completed successfully!');
+    button.innerHTML = '✅ Audio Played';
+
+    // Reset button after 3 seconds
+    setTimeout(() => {
+      button.disabled = originalDisabled;
+      button.innerHTML = originalButtonText;
+    }, 3000);
+
+  } catch (error) {
+    console.error('❌ TTS error:', error);
+    console.error('Error details:', error.message);
+
+    button.disabled = originalDisabled;
+    button.innerHTML = originalButtonText;
+
+    // Show user-friendly error
+    alert('Error playing audio:\n\n' + error.message + '\n\nCheck console for details.');
+  }
+};
+
+// Wrapper for Trauma module to keep HTML simple
+window.playTraumaAudio = function (selectedLanguage, event) {
+  // Use the global variable storing the trauma text
+  window.playGlobalAudio(traumaTranslatedText, selectedLanguage, event);
+};
 
 
 // ==================== Module 2: Polyglot Scribe ====================

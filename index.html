@@ -40,12 +40,63 @@
     <div class="hero-inner">
       <section class="hero-left">
         <h1 class="hero-title"> <span class="accent">Scan. Detect.<br> Heal</h1>
-        <p class="hero-sub">Stop guessing the severity of injuries. Scan any wound with AI-powered analysis to instantly detect its seriousness and get the right first-aid guidance.</p>
+        <p class="hero-sub">Stop guessing the severity of injuries. Scan any wound with AI-powered analysis to instantly
+          detect its seriousness and get the right first-aid guidance.</p>
 
-        <div class="hero-ctas">
+        <<<<<<< Updated upstream <div class="hero-ctas">
           <a class="btn btn-primary" href="dashboard.html">Start Scanning →</a>
           <a class="btn btn-secondary" href="#learn">Learn More</a>
-        </div>
+          =======
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Upload Injury Image</h3>
+              <p class="card-subtitle">Supports JPG, PNG, WEBP formats</p>
+            </div>
+
+            <div class="upload-zone" id="trauma-upload-zone">
+              <div class="upload-icon">📸</div>
+              <p class="upload-text">Click to upload or drag and drop</p>
+              <p class="upload-hint">Maximum file size: 10MB</p>
+              <input type="file" id="trauma-file-input" class="file-input" accept="image/*">
+            </div>
+
+            <div id="trauma-preview" class="preview-container hidden">
+              <img id="trauma-preview-image" class="preview-image" alt="Injury preview">
+            </div>
+
+            <div class="mt-3">
+              <label for="trauma-language-select" class="card-subtitle" style="display: block; margin-bottom: 0.5rem;">
+                🗣️ Select Language for Audio Instructions
+              </label>
+              <select id="trauma-language-select" class="language-select">
+                <option value="en-IN">English (Indian)</option>
+                <option value="hi-IN">हिन्दी (Hindi)</option>
+                <option value="bn-IN">বাংলা (Bengali)</option>
+                <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+                <option value="ml-IN">മലയാളം (Malayalam)</option>
+                <option value="mr-IN">मराठी (Marathi)</option>
+                <option value="od-IN">ଓଡ଼ିଆ (Odia)</option>
+                <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option>
+                <option value="ta-IN">தமிழ் (Tamil)</option>
+                <option value="te-IN">తెలుగు (Telugu)</option>
+                <option value="gu-IN">ગુજરાતી (Gujarati)</option>
+              </select>
+            </div>
+
+            <div class="flex gap-2 mt-3">
+              <button id="trauma-analyze-btn" class="btn btn-primary" disabled>
+                <span>🔍 Analyze Trauma</span>
+              </button>
+              <button id="trauma-clear-btn" class="btn btn-secondary hidden">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div id="trauma-results" class="results-container hidden">
+            <!-- Results will be dynamically inserted here -->
+
+          </div>
       </section>
 
       <aside class="hero-right">
@@ -67,6 +118,75 @@
     <p>© Synapse Care - Decode your wound</p>
   </footer>
 
+  <<<<<<< Updated upstream=======<!-- Module 3: Rx-Vox -->
+    <section id="rx-vox" class="module-container">
+      <div class="module-header">
+        <h2 class="module-title"><span class="title-icon">💊</span> Rx-Vox</h2>
+        <p class="module-description">
+          Read handwritten prescriptions and convert to spoken instructions. Upload a prescription image to extract
+          medications and generate audio guidance.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Upload Prescription Image</h3>
+          <p class="card-subtitle">Handwritten or printed prescriptions</p>
+        </div>
+
+        <div class="upload-zone" id="rx-upload-zone">
+          <div class="upload-icon">📄</div>
+          <p class="upload-text">Click to upload or drag and drop</p>
+          <p class="upload-hint">Maximum file size: 10MB</p>
+          <input type="file" id="rx-file-input" class="file-input" accept="image/*">
+        </div>
+
+        <div id="rx-preview" class="preview-container hidden">
+          <img id="rx-preview-image" class="preview-image" alt="Prescription preview">
+        </div>
+
+        <div class="mt-3">
+          <label for="rx-language-select" class="card-subtitle" style="display: block; margin-bottom: 0.5rem;">
+            🗣️ Select Audio Language for Patient Instructions
+          </label>
+          <select id="rx-language-select" class="language-select">
+            <option value="en-IN">English (Indian)</option>
+            <option value="hi-IN">हिन्दी (Hindi)</option>
+            <option value="bn-IN">বাংলা (Bengali)</option>
+            <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+            <option value="ml-IN">മലയാളം (Malayalam)</option>
+            <option value="mr-IN">मराठी (Marathi)</option>
+            <option value="od-IN">ଓଡ଼ିଆ (Odia)</option>
+            <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option>
+            <option value="ta-IN">தமிழ் (Tamil)</option>
+            <option value="te-IN">తెలుగు (Telugu)</option>
+            <option value="gu-IN">ગુજરાતી (Gujarati)</option>
+          </select>
+        </div>
+
+        <div class="flex gap-2 mt-3">
+          <button id="rx-read-btn" class="btn btn-primary" disabled>
+            <span>📖 Read Prescription</span>
+          </button>
+          <button id="rx-clear-btn" class="btn btn-secondary hidden">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <div id="rx-results" class="results-container hidden">
+        <!-- Results will be dynamically inserted here -->
+      </div>
+    </section>
+
+    </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="gemini-api.js"></script>
+    <script src="app.js"></script>
+    >>>>>>> Stashed changes
 </body>
 
 </html>
