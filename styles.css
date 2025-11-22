@@ -1269,3 +1269,23 @@ body::before {
   .hero-title{ font-size:2.2rem }
   .landing-menu{ display:none }
 }
+
+/* ==================== Features Section ==================== */
+.features-section{
+    padding: 3.5rem 2rem;
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+}
+.features-inner{ max-width:1200px; margin:0 auto; text-align:left }
+.section-title{ font-size:2rem; font-weight:800; margin-bottom:0.5rem }
+.section-sub{ color:var(--text-secondary); margin-bottom:1.5rem }
+.features-grid{ display:grid; grid-template-columns: repeat(3,1fr); gap:1.25rem; margin-top:1rem }
+.feature-card{ background:var(--glass-bg); border:var(--border-width) solid var(--glass-border); padding:1.5rem; border-radius:12px; box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:0.75rem }
+.feature-icon{ font-size:2rem; width:48px; height:48px; display:flex; align-items:center; justify-content:center; background:var(--gradient-primary); color:white; border-radius:10px }
+.feature-title{ font-weight:700; font-size:1.05rem }
+.feature-desc{ color:var(--text-secondary); font-size:0.95rem; line-height:1.5 }
+.features-cta{ margin-top:1.25rem; display:flex; gap:1rem }
+
+@media (max-width:900px){
+    .features-grid{ grid-template-columns: 1fr; }
+    .section-title{ font-size:1.5rem }
+}
